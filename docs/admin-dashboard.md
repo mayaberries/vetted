@@ -94,11 +94,73 @@ That `??` fallback is what keeps the server markup and the hydrated markup
 identical — no mismatch, no flash of empty nav. `AdminNav.vue` is the reference
 implementation; copy its shape.
 
+## The data layer
+
+The browser never holds the JWT. Instead of fetching the backend directly, the
+client calls **Astro Actions**, which run on the server where the session lives:
+
+```
+Vue island / page
+      ↓  calls a store method
+src/stores/*.ts            client-side cache + optimistic updates (nanostores)
+      ↓  calls the AdminApi port
+src/lib/api/adminApi.ts    the interface — no token in any signature
+src/lib/api/actionsApi.ts  the real implementation, unwraps Astro's {data, error}
+      ↓
+src/actions/index.ts       runs on the server; attaches the JWT from the session
+src/lib/backendFetch.ts    the ONLY place the token is read for outbound calls
+      ↓
+backend API
+```
+
+The `AdminApi` port exists for a second reason: each store is a
+`createXStore(api)` factory, so unit tests pass a fake instead of standing up
+Astro's virtual modules. `src/stores/index.ts` wires the live instances —
+**import that from client code only**, since the instances are module singletons
+subject to the SSR rule above.
+
+| Store | Backs | Notes |
+|---|---|---|
+| `servicesStore` | `/api/services/` | list, create, update, remove |
+| `appointmentsStore` | `/api/services/{id}/appointments/` | fans out across services — see below |
+| `apiKeysStore` | `/api/clinics/{id}/api-keys/` | revoke marks inactive, doesn't delete the row |
+| `clinicsStore` | `GET /api/clinics/` | superadmin only |
+| `clinicProfileStore` | `/api/clinics/{id}/` | |
+| `availabilityStore` | `/api/clinics/{id}/availability/` | whole-week replace |
+| `toasts` | — | transient UI feedback |
+
+All of them build on `createAsyncStore` / `createCollectionStore`, which give
+every store the same two behaviours: **concurrent `load()` calls share one
+request**, and **stale responses are discarded** (a slow first load can't
+overwrite a fast reload's fresher data).
+
+### Two constraints the stores encode
+
+**There is no clinic-wide appointments endpoint.** The backend only offers
+`GET /api/services/{service_id}/appointments/`, so `appointmentsStore` lists the
+clinic's services and fans out one request per service. That N+1 lives in one
+place on purpose — it's the first thing to delete if the backend grows
+`GET /api/clinics/{id}/appointments/`. The fan-out uses `allSettled`, so one
+failing service degrades to `$partialFailure` instead of blanking the page.
+
+**Availability PUT is a full replace, not a per-day patch.** The backend's own
+schema says an omitted weekday means *closed*, not *unchanged*. So
+`availabilityStore` holds the whole week locally, `setDay`/`clearDay` don't touch
+the network, and `save()` sends everything.
+
 ## Demo mode
 
 The sign-in page has a **"Demo · Clinic admin"** button (the `demoLogin` action)
 that seeds a fake session from `src/lib/demoData.ts` — no backend needed. It's
 how the Playwright suite runs without an API or database.
+
+Every data action branches on `user.isDemo` first. Demo *reads* return that
+seed, which uses the **real wire shapes** from `lib/api/types.ts` so store and
+component code is identical in demo and live mode. Demo *writes* echo back a
+plausible object without persisting, and the store applies it optimistically —
+server-side demo state would be a process-wide singleton shared by every
+visitor, the same hazard as the stores themselves. So demo edits live in one
+browser session and vanish on reload, which is the intended behaviour.
 
 > `buildDemoUser()` always returns a **`clinic_admin`**. There is no demo
 > superadmin, which is why the superadmin half of the role gate (the Clinics tab;
@@ -139,16 +201,24 @@ Tailwind's automatic content detection.
 ## Layout of the source tree
 
 ```
-src/actions/index.ts     Astro Actions — the only place the session is written
-src/components/          Vue islands (.vue) and Astro components (.astro)
-src/layout/              AdminLayout.astro — the signed-in chrome
-src/lib/auth.ts          SessionUser type
-src/lib/nav.ts           tab registry + role gate helpers (imported by server AND client)
-src/lib/session.ts       requireSession() guard
-src/lib/demoData.ts      demo session + seeded stat data
-src/lib/onboarding/      the vanilla-JS wizard
-src/middleware.ts        auth + role guards
-src/pages/               routes
-src/stores/auth.ts       nanostores — read the warning above before touching
-tests/                   Playwright specs
+src/actions/index.ts       Astro Actions — the whole data layer; the only place
+                           the session is written and the JWT is attached
+src/components/            Vue islands (.vue) and Astro components (.astro)
+src/layout/                AdminLayout.astro — the signed-in chrome
+src/lib/api/types.ts       wire types mirroring docs/openapi.json
+src/lib/api/adminApi.ts    the port stores talk to (no token in any signature)
+src/lib/api/actionsApi.ts  the real implementation, over astro:actions
+src/lib/backendFetch.ts    server-only; reads the JWT from the session
+src/lib/auth.ts            SessionUser type
+src/lib/nav.ts             tab registry + role gate (imported by server AND client)
+src/lib/session.ts         requireSession() guard
+src/lib/demoData.ts        demo session + seed data in real wire shapes
+src/lib/onboarding/        the vanilla-JS wizard
+src/middleware.ts          auth + role guards
+src/pages/                 routes
+src/stores/                nanostores — read the warning above before touching
+  createAsyncStore.ts      the shared async primitive
+  index.ts                 live instances (client-only import)
+tests/                     Playwright specs (*.spec.ts)
+tests/unit/                vitest store tests (*.test.ts)
 ```

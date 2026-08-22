@@ -1,9 +1,11 @@
 # Testing
 
 ```bash
-make test          # both suites
-make test-be       # backend only — pytest, needs the dockerized db up
-make test-admin    # admin dashboard only — Playwright
+make test             # everything
+make test-be          # backend — pytest, needs the dockerized db up
+make test-admin       # admin dashboard — unit + end-to-end
+make test-admin-unit  # admin store unit tests only (vitest, no browser, ~200ms)
+make test-admin-e2e   # admin Playwright tests only
 ```
 
 CI (`.github/workflows/tests.yml`) runs both on push/PR to `master`: the backend
@@ -42,19 +44,43 @@ tests/_helpers/
 
 ## Admin dashboard (`frontend/admin/tests/`)
 
-Playwright, three browser projects (chromium, firefox, webkit). Specs run against
-the **built** Node entrypoint, not `astro dev` — see the gotcha in
+**Two runners share the `tests/` root.** Playwright owns `*.spec.ts`, vitest owns
+`tests/unit/**/*.test.ts`. Both configs are explicit about this — Playwright's
+default `testMatch` would otherwise pick up the vitest files and fail on them.
+
+```
+tests/onboarding.spec.ts   Playwright — the signup wizard, end to end
+tests/nav.spec.ts          Playwright — tab bar + the role gate
+tests/fixtures/            input data for Playwright specs
+tests/helpers/             page actions
+tests/wip/                 Playwright roadmap specs — see below
+tests/unit/                vitest — store logic in isolation
+tests/unit/fakeApi.ts      the scriptable AdminApi + fixtures
+```
+
+### Unit tests (vitest)
+
+Node environment, no browser, no server, no Astro build — they run in a couple
+of hundred milliseconds. Each store is a `createXStore(api)` factory precisely so
+a test can pass a fake `AdminApi`; see
+[admin-dashboard.md](admin-dashboard.md#the-data-layer).
+
+What's worth testing here rather than through the UI: the shared async
+primitive's guarantees (concurrent loads share one request; stale responses are
+discarded), the appointments fan-out including partial failure, and the rule that
+**a rejected mutation must leave local state untouched**.
+
+Several of these mirror the acceptance criteria in `tests/wip/` on purpose — the
+store test proves the transition, the Playwright spec will prove a person can
+actually do it in a browser. Both are wanted; neither replaces the other.
+
+### End-to-end (Playwright)
+
+Three browser projects (chromium, firefox, webkit). Specs run against the
+**built** Node entrypoint, not `astro dev` — see the gotcha in
 [development.md](development.md#gotchas-worth-knowing-before-you-lose-time-to-them).
 
 Everything runs in demo mode, so **no API or database needs to be up.**
-
-```
-tests/onboarding.spec.ts   the signup wizard, end to end
-tests/nav.spec.ts          tab bar + the role gate
-tests/fixtures/            input data
-tests/helpers/             page actions
-tests/wip/                 roadmap specs — see below
-```
 
 Data and page-actions are kept in separate files (`fixtures/onboarding.ts` vs
 `helpers/onboarding.ts`) so other specs can reuse either half.
@@ -66,13 +92,17 @@ These specs describe admin UI that **doesn't exist yet**. They're written agains
 Every `describe` is `.skip`'d, so they report as *skipped* rather than failing —
 **that skip count is the roadmap, and it should shrink as pages get built.**
 
-| Spec | Backend support | UI status |
+| Spec | Store behind it | UI status |
 |---|---|---|
-| `services.spec.ts` | `GET/POST /api/services/`, `PUT/DELETE /api/services/{id}/` | route stub only |
-| `appointments.spec.ts` | list/confirm/cancel/withdraw under `/api/services/{id}/appointments/` | route stub only |
-| `api-keys.spec.ts` | `GET/POST /api/clinics/{id}/api-keys/`, `DELETE …/{key_id}/` | route stub; onboarding issues the first key |
-| `clinic-settings.spec.ts` | `clinics` tag (profile + staff join), `clinic-availability` tag | no route yet (`/settings/*`) |
-| `superadmin-clinics.spec.ts` | `GET /api/clinics/` | route stub only |
+| `services.spec.ts` | `servicesStore` ✅ | route stub only |
+| `appointments.spec.ts` | `appointmentsStore` ✅ | route stub only |
+| `api-keys.spec.ts` | `apiKeysStore` ✅ | route stub; onboarding issues the first key |
+| `clinic-settings.spec.ts` | `clinicProfileStore` + `availabilityStore` ✅ | no route yet (`/settings/*`) |
+| `superadmin-clinics.spec.ts` | `clinicsStore` ✅ | route stub; **blocked on a demo superadmin** |
+
+Every one of these now has a store and unit coverage underneath it, so what's
+left in each case is the UI pass. Each spec's header comment carries a TODO
+naming its store, its unit test, and anything still blocking it.
 
 To graduate one:
 

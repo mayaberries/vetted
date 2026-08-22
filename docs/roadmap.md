@@ -95,9 +95,20 @@ These are blocked on a decision, not on effort.
 
 ## 🖥 Admin dashboard
 
-- Most tabs are route stubs. Acceptance criteria already exist as skipped specs
-  in `frontend/admin/tests/wip/` — see [testing.md](testing.md) for how to
-  graduate one.
+- **Stores and the data layer exist for every planned tab** (services,
+  appointments, API keys, clinics, clinic profile, availability), with unit
+  coverage. What's missing is the UI: most tabs are still route stubs.
+  Acceptance criteria exist as skipped specs in `frontend/admin/tests/wip/`,
+  each carrying a TODO naming its store — see [testing.md](testing.md).
+- **`cancel` takes no reason.** `tests/wip/appointments.spec.ts` fills a reason
+  field, but `PUT .../cancel` has no request body in `openapi.json`. Either drop
+  the field from the UI or add it to the backend.
+- **The appointments fan-out is an N+1.** No clinic-wide appointments endpoint
+  exists, so the store issues one request per service. A
+  `GET /api/clinics/{id}/appointments/` route would let that be deleted.
+- **The site-launch panel has no backend route**, so the superadmin Clinics tab
+  can only list clinics for now. `docs/proto/clinics.js` shows the intended
+  interaction.
 - No demo superadmin, so the superadmin half of the role gate is untested.
 - Design tokens are maintained in three places; `frontend/shared/design-tokens.mjs`
   no longer lives up to its "single source of truth" comment. See

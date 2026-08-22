@@ -53,8 +53,14 @@ test-be-docker-down: ## Tear down the dockerized backend test stack
 test-admin-install: ## Install admin dependencies + Playwright browsers, used in CI
 	cd frontend/admin && npm ci && npx playwright install --with-deps
 
-test-admin: ## Run the admin dashboard's Playwright tests (frontend/admin)
+test-admin: ## Run all admin dashboard tests (unit + Playwright)
 	cd frontend/admin && npm test
+
+test-admin-unit: ## Run the admin dashboard's store unit tests only (vitest, no browser)
+	cd frontend/admin && npm run test:unit
+
+test-admin-e2e: ## Run the admin dashboard's Playwright tests only
+	cd frontend/admin && npm run test:e2e
 
 pep: ## Run PEP8 style standards locally
 	cd backend && autopep8 . --recursive --in-place --pep8-passes 2000 --verbose

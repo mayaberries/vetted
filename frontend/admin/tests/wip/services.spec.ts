@@ -9,7 +9,15 @@ import { newService } from './fixtures';
  *   GET/POST   /api/services/
  *   PUT/DELETE /api/services/{service_id}/
  *
- * See tests/wip/README.md for how to graduate this spec once the page exists.
+ * TODO — the data layer under this page now exists and is covered:
+ *   - src/stores/services.ts       (list / create / update / remove)
+ *   - tests/unit/services.test.ts  (the same four cases, store level)
+ * What's left here is the UI pass: a real page wired to `servicesStore`, and
+ * these specs re-pointed at what it renders. Keep these as functionality tests
+ * — the unit tests prove the store transitions, only these prove a clinic admin
+ * can actually add a service in a browser.
+ *
+ * See docs/testing.md for how to graduate this spec once the page exists.
  */
 test.describe.skip('Clinic admin · Services', () => {
   test('lists the clinic’s existing services', async ({ page }) => {

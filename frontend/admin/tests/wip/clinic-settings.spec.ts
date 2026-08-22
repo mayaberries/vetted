@@ -10,7 +10,20 @@ import { clinicProfileUpdate, mondayHours } from './fixtures';
  *   POST     /api/clinics/{clinic_id}/staff/join        (join as staff — tag "clinics")
  *   GET/PUT  /api/clinics/{clinic_id}/availability/     (weekly hours — tag "clinic-availability")
  *
- * See tests/wip/README.md for how to graduate this spec once the pages exist.
+ * TODO — the data layer under these pages now exists and is covered:
+ *   - src/stores/clinicSettings.ts       (profile store + availability store)
+ *   - tests/unit/clinicSettings.test.ts  (the same cases, store level)
+ * What's left here is the UI pass: real pages wired to `clinicProfileStore` and
+ * `availabilityStore`, and these specs re-pointed at what they render. Two
+ * things to respect when building the hours editor:
+ *   1. The availability PUT is a **full replace** — an omitted weekday means
+ *      "closed", not "unchanged". The store already holds the whole week and
+ *      sends all of it on save(); don't reintroduce a per-day patch.
+ *   2. /settings/clinic, /settings/staff and /settings/hours have no route or
+ *      nav entry yet. Add a "Settings" tab to src/lib/nav.ts first — tabForPath
+ *      already prefix-matches, so nested routes resolve to their parent tab.
+ *
+ * See docs/testing.md for how to graduate this spec once the pages exist.
  */
 test.describe.skip('Clinic admin · Settings', () => {
   test('shows and edits the clinic profile', async ({ page }) => {

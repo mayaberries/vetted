@@ -11,7 +11,16 @@ import { newApiKey } from './fixtures';
  *   GET/POST /api/clinics/{clinic_id}/api-keys/
  *   DELETE   /api/clinics/{clinic_id}/api-keys/{key_id}/   (revoke)
  *
- * See tests/wip/README.md for how to graduate this spec once the page exists.
+ * TODO — the data layer under this page now exists and is covered:
+ *   - src/stores/apiKeys.ts       (list / create / revoke, $active + $revoked)
+ *   - tests/unit/apiKeys.test.ts  (the same cases, store level)
+ * What's left here is the UI pass: a real page wired to `apiKeysStore`, and
+ * these specs re-pointed at what it renders. Note the store deliberately keeps
+ * a revoked key in the list with `is_active: false` rather than removing it —
+ * the "revokes a key" spec below already assumes that, so the row must survive
+ * the revoke and show a revoked state.
+ *
+ * See docs/testing.md for how to graduate this spec once the page exists.
  */
 test.describe.skip('Clinic admin · API keys', () => {
   test('lists existing keys with their environment and status', async ({ page }) => {

@@ -11,7 +11,20 @@ import { test, expect } from '@playwright/test';
  * that second test below is more speculative than the others in wip/ and may
  * need a new backend route, not just a new page.
  *
- * See tests/wip/README.md for how to graduate this spec once the page exists.
+ * TODO — the data layer under this page now exists and is covered:
+ *   - src/stores/clinics.ts              (list, $sorted, $bySlug)
+ *   - tests/unit/clinicSettings.test.ts  ("clinics store (superadmin)")
+ * What's left here is the UI pass: a real page wired to `clinicsStore`, and
+ * these specs re-pointed at what it renders. Blocked on two things the store
+ * can't supply:
+ *   1. **No demo superadmin.** buildDemoUser() is always a clinic_admin, so
+ *      these specs can't even sign in as someone who may reach /clinics. Add a
+ *      demoSuperadminLogin action (src/actions/index.ts) first — it also closes
+ *      the untested half of the role gate in tests/nav.spec.ts.
+ *   2. The site-launch panel has no backend route at all; the store models
+ *      clinics only. docs/proto/clinics.js shows the intended interaction.
+ *
+ * See docs/testing.md for how to graduate this spec once the page exists.
  */
 test.describe.skip('Superadmin · Clinics', () => {
   test('lists every clinic on the platform', async ({ page }) => {

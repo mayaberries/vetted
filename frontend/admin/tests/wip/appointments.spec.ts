@@ -16,7 +16,22 @@ import { existingAppointment } from './fixtures';
  * a per-service one) — expect it to aggregate across every service's endpoint,
  * or for the backend to grow a clinic-wide listing route to back it.
  *
- * See tests/wip/README.md for how to graduate this spec once the page exists.
+ * TODO — the data layer under this page now exists and is covered:
+ *   - src/stores/appointments.ts       (the cross-service fan-out, status
+ *                                       filter, confirm / cancel / withdraw)
+ *   - tests/unit/appointments.test.ts  (the same cases, store level, including
+ *                                       partial fan-out failure)
+ * What's left here is the UI pass: a real page wired to `appointmentsStore`,
+ * and these specs re-pointed at what it renders. Two gaps the store can't
+ * settle on its own, worth resolving while building the page:
+ *   1. `cancel` takes no reason — the spec below fills a /reason/ field, but
+ *      PUT .../cancel has no body in openapi.json. Either drop the field or
+ *      add it to the backend first.
+ *   2. The fan-out is an N+1 over services. If the backend grows
+ *      GET /api/clinics/{id}/appointments/, delete the fan-out in the store
+ *      rather than working around it here.
+ *
+ * See docs/testing.md for how to graduate this spec once the page exists.
  */
 test.describe.skip('Clinic admin · Appointments', () => {
   test('lists appointments across all services', async ({ page }) => {

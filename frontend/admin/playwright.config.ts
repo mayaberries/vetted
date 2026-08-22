@@ -13,6 +13,10 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './tests',
+  /* Only Playwright's own specs. `tests/unit/` holds vitest store tests named
+   * *.test.ts, which Playwright's default testMatch would otherwise pick up and
+   * fail on — the two runners share a tests/ root but not each other's files. */
+  testMatch: '**/*.spec.ts',
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
