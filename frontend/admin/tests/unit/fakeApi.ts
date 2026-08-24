@@ -44,6 +44,8 @@ export function anAppointment(over: Partial<AppointmentPublic> = {}): Appointmen
         start_time: '2026-09-01T15:00:00Z',
         end_time: '2026-09-01T15:30:00Z',
         status: 'requested',
+        cancellation_reason: null,
+        cancelled_by: null,
         pet: {id: 'pet-1', name: 'Biscuit', species: 'dog', breed: null},
         ...over,
     };
@@ -122,8 +124,10 @@ export function createFakeApi(overrides: Record<string, Handler> = {}): FakeApi 
             confirm: method('appointments.confirm', (_s: string, id: string) =>
                 anAppointment({id, status: 'confirmed'})
             ),
-            cancel: method('appointments.cancel', (_s: string, id: string) =>
-                anAppointment({id, status: 'cancelled'})
+            cancel: method(
+                'appointments.cancel',
+                (_s: string, id: string, reason?: string | null) =>
+                    anAppointment({id, status: 'cancelled', cancellation_reason: reason ?? null})
             ),
             withdraw: method('appointments.withdraw', () => undefined),
         },

@@ -38,7 +38,16 @@ export interface AdminApi {
          */
         listForService(serviceId: string): Promise<AppointmentPublic[]>;
         confirm(serviceId: string, appointmentId: string): Promise<AppointmentPublic>;
-        cancel(serviceId: string, appointmentId: string): Promise<AppointmentPublic>;
+        /**
+         * Cancelling a `requested` appointment declines it instead — the backend
+         * picks the resulting status, so the response is the source of truth for
+         * what it became. `reason` is optional; cancelling silently is allowed.
+         */
+        cancel(
+            serviceId: string,
+            appointmentId: string,
+            reason?: string | null
+        ): Promise<AppointmentPublic>;
         withdraw(serviceId: string, appointmentId: string): Promise<void>;
     };
     apiKeys: {

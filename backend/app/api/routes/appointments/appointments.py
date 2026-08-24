@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, Body, status
 from fastapi.param_functions import Depends
@@ -16,7 +16,14 @@ from app.api.dependencies.auth import get_current_active_user
 from app.api.dependencies.database import get_repository
 from app.api.dependencies.services import get_service_by_id_from_path
 from app.db.repositories.appointments import AppointmentsRepository
-from app.models.appointments.appointment import AppointmentCreate, AppointmentInDB, AppointmentPublic, AppointmentRequestIn
+from app.models.appointments.appointment import (
+    AppointmentCancelIn,
+    AppointmentCreate,
+    AppointmentInDB,
+    AppointmentPublic,
+    AppointmentRequestIn,
+    resolve_cancellation_status,
+)
 from app.models.services.service import ServiceInDB
 from app.models.auth.user import UserInDB
 
@@ -84,10 +91,20 @@ async def confirm_appointment(
     status_code=status.HTTP_200_OK, dependencies=[Depends(check_appointment_cancel_permissions)],
 )
 async def cancel_appointment(
+        cancel_in: Optional[AppointmentCancelIn] = Body(None, embed=False),
         appointment: AppointmentInDB = Depends(get_appointment_by_id_from_path),
+        current_user: UserInDB = Depends(get_current_active_user),
         appointments_repo: AppointmentsRepository = Depends(get_repository(AppointmentsRepository)),
 ) -> AppointmentPublic:
-    cancelled = await appointments_repo.cancel_appointment(appointment=appointment)
+    # Body is optional so a bodyless PUT stays valid -- cancelling without
+    # giving a reason is legitimate, and every pre-existing caller does it.
+    cancelled = await appointments_repo.cancel_appointment(
+        appointment=appointment,
+        # A never-confirmed booking is declined, not cancelled.
+        new_status=resolve_cancellation_status(appointment.status),
+        cancellation_reason=cancel_in.cancellation_reason if cancel_in else None,
+        cancelled_by=current_user.id,
+    )
     return await appointments_repo.populate_appointment(appointment=cancelled)
 
 

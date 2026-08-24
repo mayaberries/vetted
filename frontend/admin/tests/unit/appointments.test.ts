@@ -116,6 +116,53 @@ describe('appointments store', () => {
         expect(store.findById('a1')).toBeUndefined();
     });
 
+    it('passes the cancellation reason through to the API and stores it', async () => {
+        const cancel = vi.fn((_s: string, id: string, reason?: string | null) =>
+            anAppointment({id, status: 'cancelled', cancellation_reason: reason ?? null})
+        );
+        const store = createAppointmentsStore(twoServiceApi({'appointments.cancel': cancel}));
+        await store.load();
+
+        await store.cancel('a1', 'Clinic closed that day');
+
+        expect(cancel).toHaveBeenCalledWith('svc-1', 'a1', 'Clinic closed that day');
+        expect(store.findById('a1')?.cancellation_reason).toBe('Clinic closed that day');
+    });
+
+    it('cancels without a reason when none is given', async () => {
+        const cancel = vi.fn((_s: string, id: string, reason?: string | null) =>
+            anAppointment({id, status: 'cancelled', cancellation_reason: reason ?? null})
+        );
+        const store = createAppointmentsStore(twoServiceApi({'appointments.cancel': cancel}));
+        await store.load();
+
+        await store.cancel('a1');
+
+        expect(cancel).toHaveBeenCalledWith('svc-1', 'a1', undefined);
+        expect(store.findById('a1')?.cancellation_reason).toBeNull();
+    });
+
+    it('reflects a declined result when the backend declines a requested appointment', async () => {
+        // Cancelling something never confirmed declines it instead. The backend
+        // decides, so the store must take the returned status rather than
+        // assuming "cancelled".
+        const store = createAppointmentsStore(
+            twoServiceApi({
+                'appointments.cancel': (_s: string, id: string, reason?: string | null) =>
+                    anAppointment({id, status: 'declined', cancellation_reason: reason ?? null}),
+            })
+        );
+        await store.load();
+
+        await store.cancel('a1', 'Fully booked');
+
+        expect(store.findById('a1')?.status).toBe('declined');
+        expect(store.$counts.get().declined).toBe(1);
+
+        store.setStatusFilter('declined');
+        expect(store.$visible.get().map((a) => a.id)).toEqual(['a1']);
+    });
+
     it('refuses to act on an appointment that was never loaded', async () => {
         const store = createAppointmentsStore(twoServiceApi());
         await store.load();

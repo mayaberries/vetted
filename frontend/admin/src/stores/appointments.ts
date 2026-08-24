@@ -111,9 +111,14 @@ export function createAppointmentsStore(api: AdminApi) {
             return updated;
         },
 
-        async cancel(appointmentId: string): Promise<AppointmentPublic> {
+        /**
+         * Cancelling a `requested` appointment *declines* it rather than
+         * cancelling it — the backend decides, so the returned appointment is
+         * the source of truth for which it became. `reason` is optional.
+         */
+        async cancel(appointmentId: string, reason?: string | null): Promise<AppointmentPublic> {
             const {service_id} = requireLoaded(appointmentId);
-            const updated = await api.appointments.cancel(service_id, appointmentId);
+            const updated = await api.appointments.cancel(service_id, appointmentId, reason);
             collection.upsert(updated);
             return updated;
         },

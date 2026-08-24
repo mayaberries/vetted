@@ -136,6 +136,11 @@ overwrite a fast reload's fresher data).
 
 ### Two constraints the stores encode
 
+**Cancelling may produce `declined`, not `cancelled`.** `cancel(id, reason?)`
+takes an optional reason, but the *resulting status* is the backend's call —
+cancelling a `requested` appointment declines it. The store upserts whatever
+comes back rather than assuming; UI code must read the returned status too.
+
 **There is no clinic-wide appointments endpoint.** The backend only offers
 `GET /api/services/{service_id}/appointments/`, so `appointmentsStore` lists the
 clinic's services and fans out one request per service. That N+1 lives in one

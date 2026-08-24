@@ -28,8 +28,8 @@ export const actionsApi: AdminApi = {
         listForService: (serviceId) => unwrap(actions.appointments.listForService({serviceId})),
         confirm: (serviceId, appointmentId) =>
             unwrap(actions.appointments.confirm({serviceId, appointmentId})),
-        cancel: (serviceId, appointmentId) =>
-            unwrap(actions.appointments.cancel({serviceId, appointmentId})),
+        cancel: (serviceId, appointmentId, reason) =>
+            unwrap(actions.appointments.cancel({serviceId, appointmentId, reason})),
         withdraw: (serviceId, appointmentId) =>
             unwrap(actions.appointments.withdraw({serviceId, appointmentId})).then(() => undefined),
     },

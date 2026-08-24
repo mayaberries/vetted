@@ -46,6 +46,30 @@ make update-deps      # installs .in, then refreezes .txt
 `backend/requirements-cli.txt` is separate on purpose — the API server never
 imports from `cli/`.
 
+## Generate, don't hand-write
+
+Some files in this repo are **produced by a tool**. Run the tool and edit its
+output — never author the artifact from scratch, and never edit a generated file
+in place.
+
+| Artifact | Generate with | Never |
+|---|---|---|
+| Alembic migration | `alembic revision -m "..."` from `backend/` | hand-create a file in `versions/`, or hand-type `down_revision` |
+| `docs/openapi.json` | `make openapi` | edit the JSON |
+| `backend/requirements.txt` | `make update-deps` (after editing `requirements.in`) | hand-edit the frozen file |
+| Frontend deps | `npm install` / `npm install -D` | hand-edit `package.json` dependencies |
+| Playwright browsers | `make test-admin-install` | — |
+
+The reason is always the same: **hand-writing skips the tool's bookkeeping**, and
+the bookkeeping is the part that's easy to get subtly wrong. `alembic revision`
+computes `down_revision` from the current head, so the migration chain can't be
+mis-linked; `make openapi` derives the schema from the live route definitions, so
+the documented API can't drift from the real one; `npm install` and
+`make update-deps` resolve and lock transitive versions.
+
+If you find yourself about to write one of these by hand, that's the signal a
+tool exists for it.
+
 ## Gotchas worth knowing before you lose time to them
 
 **`astro dev` self-daemonizes.** In this Astro version it forks a background

@@ -100,6 +100,9 @@ export interface AppointmentPublic {
     start_time: string;
     end_time: string;
     status: AppointmentStatus | null;
+    /** Set together when cancelled or declined; `cancelled_by` says which side wrote it. */
+    cancellation_reason: string | null;
+    cancelled_by: string | null;
     created_at?: string | null;
     updated_at?: string | null;
     /** Populated by the backend's `populate_appointment` — may be absent. */

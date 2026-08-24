@@ -80,6 +80,29 @@ Categories are veterinary: `wellness_exam`, `vaccination`, `microchipping`,
 - Routes are id-based: `/services/{service_id}/appointments/{appointment_id}`,
   with `/confirm` and `/cancel` sub-actions and `DELETE` for withdrawal.
 
+### Who may cancel, and what cancelling produces
+
+Either side of a booking may cancel, but not from the same states:
+
+| Actor | Current status | Result |
+|---|---|---|
+| Booking client | `requested` | **400** — clients *withdraw* a request, they don't cancel it |
+| Booking client | `confirmed` | → `cancelled` |
+| Clinic staff | `requested` | → **`declined`** |
+| Clinic staff | `confirmed` | → `cancelled` |
+| Anyone else | any | **403** |
+
+A booking that was never confirmed is *declined*, not cancelled — that's what
+the `declined` status is for, and staff cancelling a requested appointment is
+the only thing that produces it. The rule lives in one place,
+`resolve_cancellation_status` in `app/models/appointments/appointment.py`, so
+the route and the permission check can't drift.
+
+Cancelling optionally carries a **`cancellation_reason`** (free text, max 500
+chars) and always records **`cancelled_by`**. Both appear on `AppointmentPublic`,
+so the client sees why the clinic cancelled — which is the point of recording it.
+`cancelled_by` matters because the reason alone wouldn't say which side wrote it.
+
 ### Two scheduling behaviours that look like bugs but aren't
 
 **Double-booking is only blocked at confirm time.** Confirming checks for

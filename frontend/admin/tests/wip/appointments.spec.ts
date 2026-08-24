@@ -22,12 +22,15 @@ import { existingAppointment } from './fixtures';
  *   - tests/unit/appointments.test.ts  (the same cases, store level, including
  *                                       partial fan-out failure)
  * What's left here is the UI pass: a real page wired to `appointmentsStore`,
- * and these specs re-pointed at what it renders. Two gaps the store can't
- * settle on its own, worth resolving while building the page:
- *   1. `cancel` takes no reason — the spec below fills a /reason/ field, but
- *      PUT .../cancel has no body in openapi.json. Either drop the field or
- *      add it to the backend first.
- *   2. The fan-out is an N+1 over services. If the backend grows
+ * and these specs re-pointed at what it renders. Notes for whoever builds it:
+ *   1. The /reason/ field below is now real — PUT .../cancel takes an optional
+ *      `cancellation_reason` (max 500 chars), and the response carries it back
+ *      along with `cancelled_by`. The field should stay optional in the UI.
+ *   2. **Cancelling a `requested` appointment declines it**, so the last test
+ *      below (which cancels the requested `existingAppointment`) should expect
+ *      /declined/, not /cancelled/. Take the status from the response rather
+ *      than assuming — the backend decides.
+ *   3. The fan-out is an N+1 over services. If the backend grows
  *      GET /api/clinics/{id}/appointments/, delete the fan-out in the store
  *      rather than working around it here.
  *

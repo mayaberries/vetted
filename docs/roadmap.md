@@ -13,7 +13,9 @@ what the gap actually blocks, not by layer.
   auto-creates the guest owner, auto-registers them with the clinic, auto-creates
   or links the pet
 - Conflict detection against confirmed appointments (`409` on overlap)
-- Full staff-side lifecycle: list / get / confirm / cancel / withdraw
+- Full staff-side lifecycle: list / get / confirm / cancel / withdraw, with an
+  optional cancellation reason and `cancelled_by` attribution; staff cancelling
+  an unconfirmed booking declines it
 - Weekly clinic hours (`clinic_availability`), `GET` unauthenticated so a widget
   can read hours directly
 - Platform superuser bootstrap (single, DB-enforced) + `GET /clinics/`
@@ -100,9 +102,6 @@ These are blocked on a decision, not on effort.
   coverage. What's missing is the UI: most tabs are still route stubs.
   Acceptance criteria exist as skipped specs in `frontend/admin/tests/wip/`,
   each carrying a TODO naming its store — see [testing.md](testing.md).
-- **`cancel` takes no reason.** `tests/wip/appointments.spec.ts` fills a reason
-  field, but `PUT .../cancel` has no request body in `openapi.json`. Either drop
-  the field from the UI or add it to the backend.
 - **The appointments fan-out is an N+1.** No clinic-wide appointments endpoint
   exists, so the store issues one request per service. A
   `GET /api/clinics/{id}/appointments/` route would let that be deleted.

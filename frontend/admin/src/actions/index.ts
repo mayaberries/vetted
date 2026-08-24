@@ -211,13 +211,23 @@ export const server = {
             },
         }),
         cancel: defineAction({
-            input: z.object({serviceId: z.string(), appointmentId: z.string()}),
-            handler: async ({serviceId, appointmentId}, context): Promise<AppointmentPublic> => {
-                if (await isDemo(context)) return demoTransition(appointmentId, "cancelled");
+            input: z.object({
+                serviceId: z.string(),
+                appointmentId: z.string(),
+                // Optional: cancelling without explaining yourself is allowed,
+                // and the backend's max_length is 500.
+                reason: z.string().max(500).nullish(),
+            }),
+            handler: async ({serviceId, appointmentId, reason}, context): Promise<AppointmentPublic> => {
+                const user = await currentUser(context);
+                if (user.isDemo) {
+                    // Demo has no real user ids; the username stands in as the actor.
+                    return demoCancel(appointmentId, reason ?? null, user.username);
+                }
                 return backendFetch<AppointmentPublic>(
                     context,
                     `/services/${serviceId}/appointments/${appointmentId}/cancel`,
-                    {method: "PUT"}
+                    {method: "PUT", body: JSON.stringify({cancellation_reason: reason ?? null})}
                 );
             },
         }),
@@ -359,4 +369,27 @@ function demoTransition(
         throw new ActionError({code: "NOT_FOUND", message: "No such appointment."});
     }
     return {...existing, status};
+}
+
+/**
+ * Mirrors the backend's `resolve_cancellation_status`: a booking that was never
+ * confirmed is *declined*, not cancelled. Duplicated here rather than shared
+ * because demo mode never reaches the backend at all — if that rule changes
+ * server-side, this has to change with it.
+ */
+function demoCancel(
+    appointmentId: string,
+    reason: string | null,
+    cancelledBy: string
+): AppointmentPublic {
+    const existing = getDemoAppointments().find((a) => a.id === appointmentId);
+    if (!existing) {
+        throw new ActionError({code: "NOT_FOUND", message: "No such appointment."});
+    }
+    return {
+        ...existing,
+        status: existing.status === "requested" ? "declined" : "cancelled",
+        cancellation_reason: reason,
+        cancelled_by: cancelledBy,
+    };
 }

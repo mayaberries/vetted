@@ -16,6 +16,14 @@ and follow the table. Don't re-derive things it already answers.
 | "Is this a bug or a known gap?" | [docs/roadmap.md](docs/roadmap.md) — **check before fixing** |
 | Endpoint shapes | `docs/openapi.json` |
 
+## Generate, don't hand-write
+
+Migrations, `docs/openapi.json`, and lockfiles are **tool output**. Run
+`alembic revision -m "..."`, `make openapi`, `make update-deps`, `npm install` —
+then edit the result. Writing one by hand skips the bookkeeping (revision
+chaining, schema derivation, version resolution) that's the whole point of the
+tool. → [the full table](docs/development.md#generate-dont-hand-write)
+
 ## Traps that cost real time
 
 **Never `.set()` a nanostore from server code.** Astro runs `output: "server"`;

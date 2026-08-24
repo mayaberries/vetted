@@ -291,15 +291,6 @@
         ],
         "parameters": [
           {
-            "name": "appointment_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Appointment Id"
-            }
-          },
-          {
             "name": "service_id",
             "in": "path",
             "required": true,
@@ -307,8 +298,34 @@
               "type": "string",
               "title": "Service Id"
             }
+          },
+          {
+            "name": "appointment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Appointment Id"
+            }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/AppointmentCancelIn"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Cancel In"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -587,13 +604,19 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "string",
-              "format": "date-time",
-              "description": "Used to determine the timestamp at which to begin querying for service feed items.",
-              "default": "2026-08-21T17:27:47.563753",
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Used to determine the timestamp at which to begin querying for service feed items. Defaults to 10 minutes from now.",
               "title": "Starting Date"
             },
-            "description": "Used to determine the timestamp at which to begin querying for service feed items."
+            "description": "Used to determine the timestamp at which to begin querying for service feed items. Defaults to 10 minutes from now."
           }
         ],
         "responses": {
@@ -2528,6 +2551,25 @@
         ],
         "title": "AccessToken"
       },
+      "AppointmentCancelIn": {
+        "properties": {
+          "cancellation_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cancellation Reason"
+          }
+        },
+        "type": "object",
+        "title": "AppointmentCancelIn",
+        "description": "Body for the cancel route. Every field optional, so a bodyless PUT stays\nvalid -- cancelling without giving a reason is a legitimate thing to do."
+      },
       "AppointmentPublic": {
         "properties": {
           "user_id": {
@@ -2562,6 +2604,28 @@
               }
             ],
             "default": "requested"
+          },
+          "cancellation_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cancellation Reason"
+          },
+          "cancelled_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cancelled By"
           },
           "created_at": {
             "anyOf": [

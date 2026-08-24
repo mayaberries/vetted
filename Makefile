@@ -62,6 +62,9 @@ test-admin-unit: ## Run the admin dashboard's store unit tests only (vitest, no 
 test-admin-e2e: ## Run the admin dashboard's Playwright tests only
 	cd frontend/admin && npm run test:e2e
 
+openapi: ## Regenerate docs/openapi.json from the FastAPI app (never edit that file by hand)
+	cd backend && python -m scripts.export_openapi
+
 pep: ## Run PEP8 style standards locally
 	cd backend && autopep8 . --recursive --in-place --pep8-passes 2000 --verbose
 
