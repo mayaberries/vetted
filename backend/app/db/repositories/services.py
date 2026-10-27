@@ -94,7 +94,7 @@ class ServicesRepository(BaseRepository):
         """
         Same query as list_all_clinic_services, split out to take a bare
         clinic_id instead of a UserInDB. Used by the public booking surface
-        (app/api/routes/public_booking.py), where the clinic comes from a
+        (kalens/api/routes/public_booking.py), where the clinic comes from a
         resolved public API key rather than a logged-in user -- there is no
         UserInDB in that request path at all.
         """
@@ -105,7 +105,7 @@ class ServicesRepository(BaseRepository):
 
     async def get_service_by_id_for_clinic(self, *, id: str, clinic_id: str) -> Optional[ServiceInDB]:
         """
-        Used by the public booking surface (public_booking.py) to confirm
+        Used by the public booking surface (kalens' public_booking.py) to confirm
         the requested service actually belongs to the key-resolved clinic
         before anything is booked against it -- a key for clinic A can
         never book, or even confirm the existence of, clinic B's services.

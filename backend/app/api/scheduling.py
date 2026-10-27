@@ -55,8 +55,6 @@ from app.models.services.service import ServicePublic
 # types it does today.
 # These are what the routes declare as response_model, so they're also the
 # classes to import anywhere a response is compared against a model.
-# TODO(kalens): the same-named classes in app/models/appointments/appointment.py
-# are dead and go with that module.
 class AppointmentPublic(kalens.AppointmentPublic):
     user: Optional[UserPublic] = None
     pet: Optional[PetProfilePublic] = None
