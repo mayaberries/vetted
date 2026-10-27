@@ -2,6 +2,11 @@ FROM python:3.13-slim
 
 WORKDIR /app
 
+# kalens installs from a git tag, not PyPI, and -slim ships without git.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
