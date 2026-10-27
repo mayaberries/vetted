@@ -10,8 +10,10 @@ dependencies in particular must be taken from it, never rebuilt: FastAPI
 caches a dependency per request by callable identity, so a re-derived
 `get_appointment_by_id_from_path` would load the same appointment twice.
 
-Not mounted yet -- the host's own appointment routes are still the ones
-serving traffic. Importing this module does nothing to the running app.
+Importing this module installs the integration as a side effect, and the
+route packages (app/api/routes/appointments, app/api/routes/clinics) import
+it to mount `appts`' routers -- so it has to stay free of route imports
+itself, or that becomes a cycle.
 """
 from typing import Optional
 
