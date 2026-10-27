@@ -5,10 +5,10 @@ from databases import Database
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 
-from app.db.repositories.appointments import AppointmentsRepository
+from kalens import AppointmentsRepository
 from app.db.repositories.clinic_owner_profiles import ClinicOwnerProfilesRepository
 from app.db.repositories.users import UsersRepository
-from app.models.appointments.appointment import AppointmentCreate
+from kalens import AppointmentCreate
 from app.models.clinics.clinic_api_key import ClinicAPIKeyInDB
 from app.models.services.service import ServiceInDB
 from app.models.auth.user import UserInDB

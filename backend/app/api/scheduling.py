@@ -44,7 +44,6 @@ from app.db.repositories.clinic_owner_profiles import ClinicOwnerProfilesReposit
 from app.db.repositories.pets import PetProfilesRepository
 from app.db.repositories.services import ServicesRepository
 from app.db.repositories.users import UsersRepository
-from app.models.appointments.appointment import DEFAULT_APPOINTMENT_DURATION_MINUTES
 from app.models.auth.user import UserPublic
 from app.models.clinics.clinic_owner_profile import ClinicOwnerProfileRegistration
 from app.models.profiles.pet_profile import PetProfilePublic, PublicPetInput
@@ -54,10 +53,10 @@ from app.models.services.service import ServicePublic
 # kalens types these loosely because it can't import our models; these
 # subclasses narrow them back so the emitted OpenAPI schema names the same
 # types it does today.
-# TODO(kalens): these replace the same-named classes in
-# app/models/appointments/appointment.py once the host's routes are removed.
-# Until then both exist, and only one may be mounted at a time or the schema
-# gets two components called AppointmentPublic.
+# These are what the routes declare as response_model, so they're also the
+# classes to import anywhere a response is compared against a model.
+# TODO(kalens): the same-named classes in app/models/appointments/appointment.py
+# are dead and go with that module.
 class AppointmentPublic(kalens.AppointmentPublic):
     user: Optional[UserPublic] = None
     pet: Optional[PetProfilePublic] = None
@@ -87,10 +86,10 @@ appts = configure(AppointmentsIntegration(
     subject_public_model=PetProfilePublic,
     service_public_model=ServicePublic,
     owner_link_registration_model=ClinicOwnerProfileRegistration,
-    # Read from the same env vars as app/core/limiter.py, so moving the routes
-    # over later can't silently change a deployment's limits.
+    # Same env vars the host's own limiter read, so a deployment's limits
+    # didn't change when the routes moved. The default appointment duration
+    # is left to kalens: its default is the 30 minutes this app always used.
     settings=Settings(
-        default_appointment_duration_minutes=DEFAULT_APPOINTMENT_DURATION_MINUTES,
         redis_url=REDIS_URL,
         public_rate_limit_per_key=PUBLIC_RATE_LIMIT_PER_KEY,
         public_rate_limit_per_ip=PUBLIC_RATE_LIMIT_PER_IP,

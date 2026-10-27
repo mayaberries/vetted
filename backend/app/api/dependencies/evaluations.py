@@ -3,16 +3,22 @@ from fastapi import Depends
 from fastapi.exceptions import HTTPException
 from starlette import status
 
-from app.api.dependencies.appointments import get_appointment_by_id_from_path
+from kalens import AppointmentInDB, AppointmentStatus
+
+from app.api.scheduling import appts
 from app.api.dependencies.auth import get_current_active_user
 from app.api.dependencies.services import get_service_by_id_from_path, user_can_manage_service
 from app.api.dependencies.database import get_repository
 from app.api.dependencies.users import get_user_by_username_from_path
 from app.db.repositories.evaluations import EvaluationsRepository
 from app.models.services.service import ServiceInDB
-from app.models.appointments.appointment import AppointmentInDB, AppointmentStatus
 from app.models.auth.user import UserInDB
 from app.models.appointments.evaluation import EvaluationInDB
+
+# Taken off the configured handle, never rebuilt: FastAPI dedupes a dependency
+# per request by callable identity, and the evaluation routes depend on this
+# both directly and through the checks below.
+get_appointment_by_id_from_path = appts.dependencies.get_appointment_by_id_from_path
 
 
 async def check_evaluation_create_permissions(

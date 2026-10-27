@@ -6,7 +6,7 @@ import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 
-from app.models.appointments.appointment import AppointmentPublic
+from app.api.scheduling import AppointmentPublic
 from app.models.profiles.pet_profile import PetProfileInDB
 from app.models.services.service import ServiceInDB
 from app.models.auth.user import UserInDB
