@@ -9,6 +9,9 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestClinicAvailabilityRateLimit:
+    # The first test also proves app/api/scheduling.py hands kalens our
+    # configured read limit, so it stays. The second is pure limiter
+    # behaviour: TODO(kalens#1) drop it once a kalens release covers it.
     async def test_per_clinic_limit_returns_429_once_exceeded(
             self, app: FastAPI, client: AsyncClient, user_clinic_a_admin: UserInDB
     ) -> None:

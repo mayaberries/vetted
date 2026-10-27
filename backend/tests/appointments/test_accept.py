@@ -6,11 +6,9 @@ from fastapi import FastAPI, status
 from httpx import AsyncClient
 
 from kalens import AppointmentsRepository
-from kalens import AppointmentCreate
 from app.api.scheduling import AppointmentPublic
 from app.models.services.service import ServiceInDB
 from app.models.auth.user import UserInDB
-from tests._fixtures.pets import create_pet_for_user
 
 pytestmark = pytest.mark.asyncio
 
@@ -66,81 +64,3 @@ class TestAcceptAppointments:
         )
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
-
-    async def test_service_owner_cant_confirm_overlapping_appointment(
-            self,
-            app: FastAPI,
-            clinic_a_admin_client: AsyncClient,
-            test_client_list: List[UserInDB],
-            test_service_with_appointments: ServiceInDB
-    ) -> None:
-        appts_repo = AppointmentsRepository(app.state._db)
-        pet = await create_pet_for_user(app.state._db, test_client_list[0], name="Overlap Pet")
-        appointments = await appts_repo.list_appointments_for_service(service=test_service_with_appointments)
-
-        response = await clinic_a_admin_client.put(
-            app.url_path_for(
-                "appointments:confirm-appointment",
-                service_id=test_service_with_appointments.id,
-                appointment_id=appointments[0].id,
-            )
-        )
-        assert response.status_code == status.HTTP_200_OK
-
-        overlapping = await appts_repo.create_appointment_for_service(
-            new_appointment=AppointmentCreate(
-                service_id=test_service_with_appointments.id,
-                user_id=test_client_list[0].id,
-                pet_id=pet.id,
-                start_time=appointments[0].start_time,
-            ),
-            service=test_service_with_appointments,
-        )
-
-        response = await clinic_a_admin_client.put(
-            app.url_path_for(
-                "appointments:confirm-appointment",
-                service_id=test_service_with_appointments.id,
-                appointment_id=overlapping.id,
-            )
-        )
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-
-    async def test_confirming_one_offer_does_not_affect_others(
-            self,
-            app: FastAPI,
-            clinic_a_admin_client: AsyncClient,
-            test_client_list: List[UserInDB],
-            test_service_with_appointments: ServiceInDB
-    ) -> None:
-        appts_repo = AppointmentsRepository(app.state._db)
-        appointments = await appts_repo.list_appointments_for_service(service=test_service_with_appointments)
-        selected = random.choice(appointments)
-
-        response = await clinic_a_admin_client.put(
-            app.url_path_for(
-                "appointments:confirm-appointment",
-                service_id=test_service_with_appointments.id,
-                appointment_id=selected.id,
-            )
-        )
-
-        assert response.status_code == status.HTTP_200_OK
-
-        response = await clinic_a_admin_client.get(
-            app.url_path_for(
-                "appointments:list-appointments-for-service",
-                service_id=test_service_with_appointments.id
-            )
-        )
-
-        assert response.status_code == status.HTTP_200_OK
-
-        refreshed = [AppointmentPublic(**o) for o in response.json()]
-
-        for appt in refreshed:
-            if appt.id == selected.id:
-                assert appt.status == "confirmed"
-            else:
-                # non-overlapping requests are left untouched, not auto-declined
-                assert appt.status == "requested"

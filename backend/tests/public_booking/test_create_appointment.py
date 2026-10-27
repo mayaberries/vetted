@@ -5,14 +5,10 @@ from databases import Database
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 
-from kalens import AppointmentsRepository
 from app.db.repositories.clinic_owner_profiles import ClinicOwnerProfilesRepository
 from app.db.repositories.users import UsersRepository
-from kalens import AppointmentCreate
 from app.models.clinics.clinic_api_key import ClinicAPIKeyInDB
 from app.models.services.service import ServiceInDB
-from app.models.auth.user import UserInDB
-from tests._fixtures.pets import create_pet_for_user
 
 pytestmark = pytest.mark.asyncio
 
@@ -141,20 +137,6 @@ class TestCreatePublicAppointment:
         )
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    async def test_missing_pet_rejected(
-            self, app: FastAPI, client: AsyncClient,
-            clinic_a_public_key: ClinicAPIKeyInDB, test_service: ServiceInDB,
-    ) -> None:
-        response = await client.post(
-            app.url_path_for("public-booking:create-appointment"),
-            headers={"X-Clinic-Key": clinic_a_public_key.public_key},
-            json={
-                "email": "no-pet@example.com", "service_id": test_service.id,
-                "start_time": _future_start_time(),
-            },
-        )
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-
     async def test_pet_id_and_new_pet_together_rejected(
             self, app: FastAPI, client: AsyncClient,
             clinic_a_public_key: ClinicAPIKeyInDB, test_service: ServiceInDB,
@@ -231,101 +213,6 @@ class TestListPublicPets:
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == []
 
-    async def test_conflicting_slot_rejected(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            db: Database,
-            clinic_a_public_key: ClinicAPIKeyInDB,
-            test_service: ServiceInDB,
-            user_client_one: UserInDB,
-    ) -> None:
-        appts_repo = AppointmentsRepository(db)
-        start_time = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=20)
-        pet = await create_pet_for_user(db, user_client_one, name="Conflict Pet")  # NEW
-
-        existing = await appts_repo.create_appointment_for_service(
-            new_appointment=AppointmentCreate(
-                service_id=test_service.id, user_id=user_client_one.id, pet_id=pet.id, start_time=start_time
-                # pet_id added
-            ),
-            service=test_service,
-        )
-        await appts_repo.confirm_appointment(appointment=existing)
-
-        response = await client.post(
-            app.url_path_for("public-booking:create-appointment"),
-            headers={"X-Clinic-Key": clinic_a_public_key.public_key},
-            json={
-                "email": "conflict-guest@example.com",
-                "service_id": test_service.id,
-                "start_time": start_time.isoformat(),
-                "pet": {"new_pet": {"name": "Conflicting Pet"}},  # NEW
-            },
-        )
-        assert response.status_code == status.HTTP_409_CONFLICT
-
-    async def test_unknown_service_returns_404(
-            self, app: FastAPI, client: AsyncClient, clinic_a_public_key: ClinicAPIKeyInDB
-    ) -> None:
-        response = await client.post(
-            app.url_path_for("public-booking:create-appointment"),
-            headers={"X-Clinic-Key": clinic_a_public_key.public_key},
-            json={
-                "email": "guest@example.com",
-                "service_id": "00000000-0000-0000-0000-000000000000",
-                "start_time": _future_start_time(),
-                "pet": {"new_pet": {"name": "Test Pet"}},  # NEW
-            },
-        )
-        assert response.status_code == status.HTTP_404_NOT_FOUND
-
-    async def test_past_start_time_rejected(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            clinic_a_public_key: ClinicAPIKeyInDB,
-            test_service: ServiceInDB,
-    ) -> None:
-        past_time = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)).isoformat()
-        response = await client.post(
-            app.url_path_for("public-booking:create-appointment"),
-            headers={"X-Clinic-Key": clinic_a_public_key.public_key},
-            json={"email": "guest@example.com", "service_id": test_service.id, "start_time": past_time},
-        )
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-
-    async def test_invalid_email_rejected(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            clinic_a_public_key: ClinicAPIKeyInDB,
-            test_service: ServiceInDB,
-    ) -> None:
-        response = await client.post(
-            app.url_path_for("public-booking:create-appointment"),
-            headers={"X-Clinic-Key": clinic_a_public_key.public_key},
-            json={
-                "email": "not-an-email",
-                "service_id": test_service.id,
-                "start_time": _future_start_time(),
-            },
-        )
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-
-    async def test_booking_requires_a_valid_clinic_key(
-            self, app: FastAPI, client: AsyncClient, test_service: ServiceInDB
-    ) -> None:
-        response = await client.post(
-            app.url_path_for("public-booking:create-appointment"),
-            json={
-                "email": "guest@example.com",
-                "service_id": test_service.id,
-                "start_time": _future_start_time(),
-            },
-        )
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
-
     async def test_guest_account_cannot_authenticate_via_password_login(
             self,
             app: FastAPI,
@@ -334,15 +221,19 @@ class TestListPublicPets:
             clinic_a_public_key: ClinicAPIKeyInDB,
             test_service: ServiceInDB,
     ) -> None:
-        await client.post(
+        booking = await client.post(
             app.url_path_for("public-booking:create-appointment"),
             headers={"X-Clinic-Key": clinic_a_public_key.public_key},
             json={
                 "email": "login-attempt@example.com",
                 "service_id": test_service.id,
                 "start_time": _future_start_time(),
+                "pet": {"new_pet": {"name": "Login Pet"}},
             },
         )
+        # Without this the test passes vacuously: a rejected booking creates
+        # no guest, and a user that doesn't exist can't log in either.
+        assert booking.status_code == status.HTTP_201_CREATED
         users_repo = UsersRepository(db)
         # The guest's password is random and never disclosed, so this
         # specifically checks the explicit is_guest guard in

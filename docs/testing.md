@@ -57,6 +57,28 @@ produce real concurrency.
 `tests/feed/` is skipped — the Feed feature is dormant, see
 [domain.md](domain.md#feed).
 
+### Tests that go through kalens' routes
+
+`tests/appointments/`, `tests/public_booking/` and the availability tests under
+`tests/clinics/` call routes that [kalens](architecture.md#scheduling-lives-in-kalens)
+owns. Scheduling *rules* — status transitions, overlap/409s, cancellation
+reasons, payload validation on kalens' own models — are kalens' to test, and
+its suite does. What stays here is what kalens can't see, because its suite
+runs against a stand-in host:
+
+- **Contract tests:** one or two per thing `app/api/scheduling.py` hands
+  kalens — our repositories, permission dependencies (`user_can_manage_service`,
+  `check_clinic_modification_permissions`, `get_service_clinic_id`, …), models,
+  and the rate-limit settings. They prove our real implementations satisfy
+  what kalens expects.
+- **Our own code reached through those routes:** clinic-key resolution
+  (`public_auth.py`), `PublicPetInput`'s validator, guest provisioning and
+  login refusal, per-clinic pet visibility, default hours on clinic creation.
+
+Before adding a test here, ask which of those two it is. If it's neither, it
+belongs in kalens. Tests marked `TODO(kalens#1)` are engine behaviour kept only
+until kalens covers them.
+
 ## Admin dashboard (`frontend/admin/tests/`)
 
 **Two runners share the `tests/` root.** Playwright owns `*.spec.ts`, vitest owns
