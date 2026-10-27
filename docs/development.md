@@ -13,7 +13,7 @@ make prepare-env      # copies docker-compose.yml.dist → docker-compose.yml
 
 make db-up            # Postgres 13 in Docker, container fastapi-pets-db
 make install-deps     # backend/requirements.in into the active venv
-make upgrade-db       # alembic upgrade head
+make upgrade-db       # alembic upgrade head, then stamps kalens' chain
 make run              # uvicorn, reload — interactive docs at /docs
 
 cd frontend/admin && npm install && make admin-dev
@@ -43,6 +43,18 @@ make update-deps      # installs .in, then refreezes .txt
 ```
 
 `make freeze-deps` refreezes without installing. Both filter out `pip-chill`.
+
+**Some pins must match kalens.** kalens (the scheduling engine, see
+[architecture.md](architecture.md#scheduling-lives-in-kalens)) pins exact
+versions of `fastapi`, `pydantic`, `databases`, `limits`, `alembic`,
+`SQLAlchemy` and `email-validator`. Bumping one of those here alone makes pip
+fail to resolve, so a Dependabot PR for any of them can't be merged on its own:
+bump it in kalens first, tag a release, then move both the package and the
+kalens tag here in one change.
+
+kalens installs from a git tag, so `requirements.txt` records the commit it
+resolved to, and `backend/Dockerfile` installs `git` (the `-slim` base image
+has none).
 `backend/requirements-cli.txt` is separate on purpose — the API server never
 imports from `cli/`.
 

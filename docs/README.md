@@ -8,7 +8,7 @@ anything beyond that is below.
 
 | Doc | What it answers |
 |---|---|
-| [architecture.md](architecture.md) | How the pieces fit — the three deployables, the three auth surfaces, backend layering and its conventions |
+| [architecture.md](architecture.md) | How the pieces fit — the three deployables, the three auth surfaces, backend layering and its conventions, what lives in kalens |
 | [domain.md](domain.md) | What the entities are: clinics, users, keys, pets, services, appointments, evaluations |
 | [development.md](development.md) | Setup, `make` targets, dev servers, and the gotchas that cost time |
 | [testing.md](testing.md) | Both suites, how to run them, and what the skipped specs mean |
