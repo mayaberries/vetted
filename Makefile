@@ -11,6 +11,9 @@ help: ## Show this help message
 run: ## Start the FastAPI server locally (venv), against the dockerized db
 	cd backend && uvicorn app.api.server:app --reload
 
+admin-dev: ## Start the Astro SSR admin dashboard's dev server (frontend/admin)
+	cd frontend/admin && npm run dev
+
 db-up: ## Start the database container
 	docker-compose up -d db
 
@@ -32,8 +35,35 @@ upgrade-db: ## Run migrations against the dockerized db, use with precaution
 downgrade-db: ## Roll back migrations against the dockerized db, use with precaution
 	cd backend && alembic downgrade base
 
-tests: ## Run tests locally (venv), against the dockerized db
+test: test-be test-admin ## Run all test suites (backend + admin)
+
+test-be: ## Run backend tests locally (venv), against the dockerized db
 	cd backend && pytest -v
+
+prepare-env: ## Copy docker-compose/env templates into place if missing
+	cp -n docker-compose.yml.dist docker-compose.yml
+	cp -n backend/.env.template backend/.env
+
+test-be-docker: prepare-env ## Run backend tests fully dockerized (build + ephemeral db), used in CI
+	docker compose --profile test run --rm backend
+
+test-be-docker-down: ## Tear down the dockerized backend test stack
+	docker compose down -v
+
+test-admin-install: ## Install admin dependencies + Playwright browsers, used in CI
+	cd frontend/admin && npm ci && npx playwright install --with-deps
+
+test-admin: ## Run all admin dashboard tests (unit + Playwright)
+	cd frontend/admin && npm test
+
+test-admin-unit: ## Run the admin dashboard's store unit tests only (vitest, no browser)
+	cd frontend/admin && npm run test:unit
+
+test-admin-e2e: ## Run the admin dashboard's Playwright tests only
+	cd frontend/admin && npm run test:e2e
+
+openapi: ## Regenerate docs/openapi.json from the FastAPI app (never edit that file by hand)
+	cd backend && python -m scripts.export_openapi
 
 pep: ## Run PEP8 style standards locally
 	cd backend && autopep8 . --recursive --in-place --pep8-passes 2000 --verbose

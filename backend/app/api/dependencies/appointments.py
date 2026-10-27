@@ -133,15 +133,38 @@ async def check_appointment_confirmation_permissions(
 
 def check_appointment_cancel_permissions(
         current_user: UserInDB = Depends(get_current_active_user),
+        service: ServiceInDB = Depends(get_service_by_id_from_path),
         appointment: AppointmentInDB = Depends(get_appointment_by_id_from_path),
 ) -> None:
-    if appointment.user_id != current_user.id:
+    """
+    Either side of the booking may cancel, but not from the same states.
+
+        booking client + confirmed  -> cancelled
+        clinic staff   + confirmed  -> cancelled
+        clinic staff   + requested  -> declined  (see resolve_cancellation_status)
+        booking client + requested  -> 400; clients withdraw, they don't cancel
+        anyone else                 -> 403
+
+    Staff may act on a requested appointment because declining a booking is
+    theirs to do; a client hasn't had anything to cancel yet at that point,
+    which is what the separate withdraw route is for.
+    """
+    is_booking_client = appointment.user_id == current_user.id
+    is_clinic_staff = user_can_manage_service(user=current_user, service=service)
+
+    if not is_booking_client and not is_clinic_staff:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unable to cancel this appointment.")
-    if appointment.status != AppointmentStatus.confirmed:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Can only cancel appointments that have been confirmed",
-        )
+
+    if appointment.status == AppointmentStatus.confirmed:
+        return
+    if is_clinic_staff and appointment.status == AppointmentStatus.requested:
+        return
+
+    if is_clinic_staff:
+        detail = "Can only cancel appointments that are requested or confirmed"
+    else:
+        detail = "Can only cancel appointments that have been confirmed"
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
 
 
 def check_appointment_withdrawal_permissions(

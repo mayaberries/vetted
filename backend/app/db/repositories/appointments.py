@@ -17,20 +17,31 @@ from app.models.profiles.pet_profile import PetProfilePublic
 from app.models.services.service import ServiceInDB
 from app.models.auth.user import UserInDB
 
-CREATE_APPOINTMENT_FOR_SERVICE_QUERY = """
+# Every query below builds an AppointmentInDB out of an explicit column list --
+# there's no SELECT *. Because all of that model's fields are Optional, a column
+# left out of one list doesn't raise: it silently reads back as None, so a value
+# saves correctly and then appears to have vanished. One shared list is what
+# stops that drift. (Interpolated into module-level constants only, never user
+# input -- the :named placeholders are still bound by the driver.)
+APPOINTMENT_COLUMNS = (
+    "id, service_id, user_id, pet_id, status, start_time, end_time, "
+    "cancellation_reason, cancelled_by, created_at, updated_at"
+)
+
+CREATE_APPOINTMENT_FOR_SERVICE_QUERY = f"""
     INSERT INTO appointments (id, service_id, user_id, pet_id, status, start_time, end_time)
     VALUES (:id, :service_id, :user_id, :pet_id, :status, :start_time, :end_time)
-    RETURNING id, service_id, user_id, pet_id, status, start_time, end_time, created_at, updated_at;
+    RETURNING {APPOINTMENT_COLUMNS};
 """
 
-GET_APPOINTMENT_BY_ID_QUERY = """
-    SELECT id, service_id, user_id, pet_id, status, start_time, end_time, created_at, updated_at
+GET_APPOINTMENT_BY_ID_QUERY = f"""
+    SELECT {APPOINTMENT_COLUMNS}
     FROM appointments
     WHERE id = :id;
 """
 
-LIST_APPOINTMENTS_FOR_SERVICE_QUERY = """
-    SELECT id, service_id, user_id, pet_id, status, start_time, end_time, created_at, updated_at
+LIST_APPOINTMENTS_FOR_SERVICE_QUERY = f"""
+    SELECT {APPOINTMENT_COLUMNS}
     FROM appointments
     WHERE service_id = :service_id
     ORDER BY start_time;
@@ -38,8 +49,8 @@ LIST_APPOINTMENTS_FOR_SERVICE_QUERY = """
 
 # Replaces "does this service already have any appointment from this user" —
 # now it's just history, not an identity check.
-LIST_APPOINTMENTS_FOR_SERVICE_FROM_USER_QUERY = """
-    SELECT id, service_id, user_id, pet_id, status, start_time, end_time, created_at, updated_at
+LIST_APPOINTMENTS_FOR_SERVICE_FROM_USER_QUERY = f"""
+    SELECT {APPOINTMENT_COLUMNS}
     FROM appointments
     WHERE service_id = :service_id AND user_id = :user_id
     ORDER BY start_time DESC;
@@ -59,24 +70,28 @@ CHECK_OVERLAPPING_CONFIRMED_APPOINTMENT_QUERY = """
     LIMIT 1;
 """
 
-CONFIRM_APPOINTMENT_QUERY = """
+CONFIRM_APPOINTMENT_QUERY = f"""
     UPDATE appointments
     SET status = 'confirmed'
     WHERE id = :id
-    RETURNING id, service_id, user_id, pet_id, status, start_time, end_time, created_at, updated_at;
+    RETURNING {APPOINTMENT_COLUMNS};
 """
 
-CANCEL_APPOINTMENT_QUERY = """
+# Status is bound rather than hardcoded: cancelling a *requested* appointment
+# declines it instead (see resolve_cancellation_status), so the caller decides.
+CANCEL_APPOINTMENT_QUERY = f"""
     UPDATE appointments
-    SET status = 'cancelled'
+    SET status = :status,
+        cancellation_reason = :cancellation_reason,
+        cancelled_by = :cancelled_by
     WHERE id = :id
-    RETURNING id, service_id, user_id, pet_id, status, start_time, end_time, created_at, updated_at;
+    RETURNING {APPOINTMENT_COLUMNS};
 """
 
-WITHDRAW_APPOINTMENT_QUERY = """
+WITHDRAW_APPOINTMENT_QUERY = f"""
     DELETE FROM appointments
     WHERE id = :id
-    RETURNING id, service_id, user_id, pet_id, status, start_time, end_time, created_at, updated_at;
+    RETURNING {APPOINTMENT_COLUMNS};
 """
 
 MARK_AS_COMPLETED_QUERY = """
@@ -157,8 +172,23 @@ class AppointmentsRepository(BaseRepository):
         confirmed = await self.db.fetch_one(query=CONFIRM_APPOINTMENT_QUERY, values={"id": appointment.id})
         return AppointmentInDB(**confirmed)
 
-    async def cancel_appointment(self, *, appointment: AppointmentInDB) -> AppointmentInDB:
-        cancelled = await self.db.fetch_one(query=CANCEL_APPOINTMENT_QUERY, values={"id": appointment.id})
+    async def cancel_appointment(
+            self,
+            *,
+            appointment: AppointmentInDB,
+            new_status: AppointmentStatus,
+            cancellation_reason: Optional[str] = None,
+            cancelled_by: Optional[str] = None,
+    ) -> AppointmentInDB:
+        cancelled = await self.db.fetch_one(
+            query=CANCEL_APPOINTMENT_QUERY,
+            values={
+                "id": appointment.id,
+                "status": new_status.value,
+                "cancellation_reason": cancellation_reason,
+                "cancelled_by": cancelled_by,
+            },
+        )
         return AppointmentInDB(**cancelled)
 
     async def withdraw_appointment(self, *, appointment: AppointmentInDB) -> AppointmentInDB:

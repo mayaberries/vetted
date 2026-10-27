@@ -1,0 +1,11 @@
+---
+import {landingPathFor} from "../lib/nav";
+
+export const prerender = false;
+
+// `/` isn't a tab -- it just forwards to whichever tab this role starts on
+// (`firstPageFor()` in docs/proto/shared.js). Keeping the decision here means
+// login.astro and the middleware can both redirect to a plain "/" without
+// needing to know the role.
+return Astro.redirect(landingPathFor(Astro.locals.user!));
+---
