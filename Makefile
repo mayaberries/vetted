@@ -29,11 +29,16 @@ db-login: ## Log into the Postgres server
 db-logs: ## Show database container logs
 	docker-compose logs --follow db
 
+# Our chain creates kalens' tables too, so kalens' own chain is only stamped
+# to match. Its env.py can't build the URL from POSTGRES_* like ours does,
+# so it's handed the one app.core.config already built.
+KALENS_DB_ENV = KALENS_DATABASE_URL="$$(python -c 'from app.core.config import DATABASE_URL; print(DATABASE_URL)')"
+
 upgrade-db: ## Run migrations against the dockerized db, use with precaution
-	cd backend && alembic upgrade head
+	cd backend && alembic upgrade head && $(KALENS_DB_ENV) alembic -n kalens stamp head
 
 downgrade-db: ## Roll back migrations against the dockerized db, use with precaution
-	cd backend && alembic downgrade base
+	cd backend && $(KALENS_DB_ENV) alembic -n kalens stamp base && alembic downgrade base
 
 test: test-be test-admin ## Run all test suites (backend + admin)
 
