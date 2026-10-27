@@ -14,7 +14,10 @@ python-multipart==0.0.32
 httpx==0.28.1
 pytest==9.1.1
 pytest-asyncio==1.4.0
-slowapi==0.1.10
 typer==0.27.1
 rich==15.0.0
 httpx==0.28.1
+# The scheduling engine extracted from this repo. It pins fastapi, pydantic,
+# databases, limits, alembic, SQLAlchemy and email-validator to exactly the
+# versions above -- bump those in kalens first, or pip cannot resolve.
+kalens @ git+https://github.com/mayaberries/kalens.git@v0.1.0-alpha.2

@@ -3,7 +3,7 @@ from fastapi import FastAPI, status
 from httpx import AsyncClient
 from databases import Database
 
-from app.db.repositories.clinic_availability import ClinicAvailabilityRepository
+from kalens import ClinicAvailabilityRepository
 from app.models.auth.user import UserInDB
 
 pytestmark = pytest.mark.asyncio

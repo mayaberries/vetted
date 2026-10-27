@@ -2,10 +2,10 @@ from typing import List, Optional
 from uuid import uuid4
 from databases.core import Database
 from fastapi import HTTPException, status
+from kalens import ClinicAvailabilityRepository
 
 from app.models.clinics.clinic import ClinicCreate, ClinicUpdate, ClinicInDB, slugify
 from app.models.auth.user import UserInDB, UserRole
-from app.db.repositories.clinic_availability import ClinicAvailabilityRepository
 from app.db.repositories.base import BaseRepository
 
 CLINIC_COLUMNS = "id, name, slug, email, phone_number, address, created_at, updated_at"

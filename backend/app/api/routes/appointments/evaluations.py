@@ -2,17 +2,18 @@ from typing import List
 from fastapi import APIRouter, Body, status
 from fastapi.param_functions import Depends
 
+from kalens import AppointmentInDB
+
 from app.models.appointments.evaluation import EvaluationAggregate, EvaluationCreate, EvaluationInDB, EvaluationPublic
-from app.models.appointments.appointment import AppointmentInDB
 from app.models.auth.user import UserInDB
 
 from app.api.dependencies.database import get_repository
-from app.api.dependencies.appointments import get_appointment_by_id_from_path
 from app.api.dependencies.users import get_user_by_username_from_path
 
 from app.db.repositories.evaluations import EvaluationsRepository
 from app.api.dependencies.evaluations import (
     check_evaluation_create_permissions,
+    get_appointment_by_id_from_path,
     get_evaluation_for_appointment_from_path,
     list_evaluations_for_cleaner_from_path,
 )

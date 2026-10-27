@@ -3,6 +3,11 @@
 Merged from the old root README roadmap and `roadmap/appointments.md`. Grouped by
 what the gap actually blocks, not by layer.
 
+Appointments, clinic availability and public booking now live in
+[kalens](architecture.md#scheduling-lives-in-kalens). The gaps below that touch
+them are still real here, but the fix lands in kalens and arrives by bumping
+its pin.
+
 ## ✅ Ready for solo usage (own clinic, own embedded widget)
 
 - Clinic + staff account creation, JWT auth

@@ -34,9 +34,10 @@ DATABASE_URL = config(
 
 # --- Public booking widget (clinic-key auth) ---------------------------
 
-# Optional on purpose: unset -> slowapi falls back to in-memory storage,
-# which is fine for a single-process MVP deploy. Set this once the app
-# runs with more than one worker/process, see app/core/limiter.py.
+# Optional on purpose: unset -> kalens' limiter falls back to in-memory
+# storage, which is fine for a single-process MVP deploy. Set this once the
+# app runs with more than one worker/process, see kalens/limiter.py.
+# Handed to kalens in app/api/scheduling.py, like the limits below.
 REDIS_URL: Optional[str] = config("REDIS_URL", cast=str, default=None)
 
 # Requests per minute allowed for a single clinic public key. This is the
@@ -57,7 +58,7 @@ PROFILE_CLAIM_TOKEN_EXPIRE_MINUTES = config(
 
 # Requests per minute allowed against a single clinic's availability
 # resource. GET on that route carries no auth (mirrors GET
-# /clinics/{clinic_id}/ today -- see api/routes/clinic_availability.py),
+# /clinics/{clinic_id}/ today -- see kalens/api/routes/availability.py),
 # so unlike the JWT-authed rest of the staff API there's no caller
 # identity to key a limiter on. clinic_id from the path stands in for
 # that instead.

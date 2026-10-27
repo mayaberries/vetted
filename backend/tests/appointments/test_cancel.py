@@ -5,8 +5,8 @@ from fastapi import FastAPI, status
 
 from httpx import AsyncClient
 
-from app.db.repositories.appointments import AppointmentsRepository
-from app.models.appointments.appointment import AppointmentPublic
+from kalens import AppointmentsRepository
+from app.api.scheduling import AppointmentPublic
 from app.models.services.service import ServiceInDB
 from app.models.auth.user import UserInDB
 from tests._helpers.get_appointment import get_appointment_for

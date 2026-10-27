@@ -30,7 +30,7 @@ class UserBase(CoreModel):
     is_active: bool = True
     is_superuser: bool = False
     # True only for accounts auto-provisioned by the public booking surface
-    # (app/api/routes/public_booking.py) to anchor an appointment's user_id
+    # (kalens/api/routes/public_booking.py) to anchor an appointment's user_id
     # FK. No login path accepts credentials for these -- they exist purely
     # so the guest's Profile (contact details) has somewhere to attach.
     is_guest: bool = False

@@ -24,10 +24,10 @@ from app.api.dependencies.database import get_repository
 #          every route signature.
 #        - A new nullable `environment` column on `appointments` (new
 #          migration), set from that value in create_public_appointment
-#          (routes/public_booking.py).
+#          (kalens/api/routes/public_booking.py).
 #        - Every admin-facing appointment list/dashboard query gets an
 #          implicit `WHERE environment = 'live'` (or an explicit toggle to
-#          view test bookings) -- audit app/db/repositories/appointments.py
+#          view test bookings) -- audit kalens/db/appointments.py
 #          for every read path, not just the obvious ones.
 #        - Decide whether get_or_create_guest_user (db/repositories/
 #          users.py) should also tag test-environment guest accounts, so
