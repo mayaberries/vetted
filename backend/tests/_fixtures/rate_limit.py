@@ -1,12 +1,14 @@
 import pytest_asyncio
 
-from app.core.limiter import reset_public_rate_limits
+# kalens' limiter, not app/core/limiter.py: the rate-limited routes are
+# served by kalens now, so that's the storage that has to be cleared.
+from kalens import reset_public_rate_limits
 
 
 @pytest_asyncio.fixture(autouse=True)
 def reset_public_rate_limiters():
     """
-    The rate limiter's storage backend (app/core/limiter.py) is a
+    The rate limiter's storage backend (kalens/limiter.py) is a
     module-level singleton -- imported once per test process, not
     recreated by the `app` fixture on every test despite that fixture
     rebuilding the FastAPI app itself. Without this reset, rate-limit

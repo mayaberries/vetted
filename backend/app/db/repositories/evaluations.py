@@ -1,8 +1,8 @@
 from typing import List, Optional
 from databases.core import Database
+from kalens import AppointmentInDB, AppointmentsRepository
+
 from app.db.repositories.base import BaseRepository
-from app.db.repositories.appointments import AppointmentsRepository
-from app.models.appointments.appointment import AppointmentInDB
 from app.models.appointments.evaluation import EvaluationAggregate, EvaluationCreate, EvaluationInDB
 from app.models.auth.user import UserInDB
 

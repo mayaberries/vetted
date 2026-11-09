@@ -1,6 +1,6 @@
 from typing import Optional
 from datetime import datetime
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class CoreModel(BaseModel):
@@ -8,6 +8,16 @@ class CoreModel(BaseModel):
     Any common logic to be shared by all models goes here.
     """
     pass
+
+
+class InputModel(CoreModel):
+    """
+    Base for new request bodies (*Create, *Update, *Request). Unknown fields
+    are a 422 instead of being silently dropped, so a typo'd or unsupported
+    field can't look like it was accepted. Existing input models still extend
+    CoreModel; see .claude/skills/create-model/.
+    """
+    model_config = ConfigDict(extra="forbid")
 
 
 class DateTimeModelMixin(BaseModel):
