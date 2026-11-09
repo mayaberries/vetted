@@ -8,7 +8,7 @@ from app.models.core import IDModelMixin, CoreModel, DateTimeModelMixin
 
 
 def slugify(value: str) -> str:
-    """Shared with the slug backfill migration (f1a2b3c4d5e6) — keep the
+    """Shared with the slug backfill migration (3a6fb55b8ce9_add_clinic_slug) — keep the
     two in sync if this ever changes, since the migration can't import
     application code."""
     value = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode("ascii")

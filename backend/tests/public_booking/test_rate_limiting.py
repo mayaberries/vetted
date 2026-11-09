@@ -9,7 +9,7 @@ pytestmark = pytest.mark.asyncio
 
 """
 Only the per-key limiter is exercised here. The per-IP backstop
-(ip_limiter, see app/core/limiter.py) keys off get_remote_address(request),
+(ip_limit, see kalens/limiter.py) keys off get_client_ip(request),
 which depends on request.client being populated with a real socket peer --
 that's not guaranteed to behave the same way under httpx's ASGITransport
 (no real network involved) as it does behind a real ASGI server, so

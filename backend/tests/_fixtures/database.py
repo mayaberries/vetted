@@ -16,7 +16,16 @@ def apply_migrations():
     os.environ["TESTING"] = "1"
     config = Config("alembic.ini")
     alembic.command.upgrade(config, "head")
+
+    # The chain above already created kalens' tables; this only records
+    # that, the same as `make upgrade-db`. kalens' env.py doesn't know about
+    # the _test suffix our env.py adds, so it gets the URL spelled out.
+    from app.core.config import DATABASE_URL
+    kalens_config = Config("alembic.ini", ini_section="kalens")
+    kalens_config.set_main_option("sqlalchemy.url", f"{DATABASE_URL}_test".replace("%", "%%"))
+    alembic.command.stamp(kalens_config, "head")
     yield
+    alembic.command.stamp(kalens_config, "base")
     alembic.command.downgrade(config, "base")
 
 

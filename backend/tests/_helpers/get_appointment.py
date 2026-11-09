@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.db.repositories.appointments import AppointmentsRepository
+from kalens import AppointmentsRepository
 from app.models.services.service import ServiceInDB
 from app.models.auth.user import UserInDB
 

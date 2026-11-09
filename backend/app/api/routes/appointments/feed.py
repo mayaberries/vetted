@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 import datetime
 from fastapi import APIRouter, Depends, Query
 from app.models.appointments.feed import ServiceFeedItem
@@ -23,12 +23,20 @@ async def get_service_feed_for_user(
         le=50,
         description="Used to determine how many service feed item objects to return in the response."
     ),
-    starting_date: datetime.datetime = Query(
-        datetime.datetime.now() + datetime.timedelta(minutes=10),
-        description="Used to determine the timestamp at which to begin querying for service feed items."
+    starting_date: Optional[datetime.datetime] = Query(
+        None,
+        description="Used to determine the timestamp at which to begin querying for service feed items. "
+                    "Defaults to 10 minutes from now."
     ),
     feed_repository: FeedRepository = Depends(get_repository(FeedRepository))
 ) -> List[ServiceFeedItem]:
+    # Resolved per request, not in the signature. A datetime default there is
+    # evaluated once at import time, so it freezes at process start (a stale
+    # default on any long-running server) *and* bakes a wall-clock timestamp
+    # into the OpenAPI schema, making `make openapi` churn on every run.
+    if starting_date is None:
+        starting_date = datetime.datetime.now() + datetime.timedelta(minutes=10)
+
     return await feed_repository.fetch_service_jobs_feed(
         starting_date=starting_date, page_chunk_size=page_chunk_size,
     )
