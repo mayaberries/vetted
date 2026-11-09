@@ -106,11 +106,22 @@ so they change only deliberately.
 
 ### The `*Public` convention
 
-A `*Public` model layers a populated, richer version on top of `*InDB` — e.g.
-`AppointmentPublic` adds a full `user: UserPublic` and `pet: PetProfilePublic`
-alongside the raw `user_id` and `pet_id`. Each repository has a `populate_*`
-method responsible for that hydration. If a field is missing from an API
-response, the bug is usually in `populate_*`, not in the route.
+**Existing models:** a `*Public` model layers a populated, richer version on
+top of `*InDB` — e.g. `AppointmentPublic` adds a full `user: UserPublic` and
+`pet: PetProfilePublic` alongside the raw `user_id` and `pet_id`. Each
+repository has a `populate_*` method responsible for that hydration. If a field
+is missing from an API response, the bug is usually in `populate_*`, not in the
+route.
+
+**New models** follow `.claude/skills/create-model/` instead: `*Public` is an
+allow-list that never inherits `*InDB` (so a new column isn't exposed by
+default), a hydrated relation is its own field next to the ID rather than a
+`str | Model` union on one key, inputs extend an `InputModel` with
+`extra="forbid"`, timestamps are required and timezone-aware, and hydration is
+the service's `to_public`, not a repository's `populate_*`. The existing models
+are in `openapi.json` and kalens' contract, so they change only deliberately.
+Two of them are traps rather than style: `validate_username` uses `assert`
+(gone under `python -O`), and `price` is a `float`.
 
 ### Organized by domain scope, not one-file-per-table
 
