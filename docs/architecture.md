@@ -72,6 +72,15 @@ this; the rest don't, and that's a known gap, not a model to copy — see the
 skill before adding one, and treat migrating an existing repository as its own
 change (kalens calls several of them by name through `scheduling.py`).
 
+New **routes** follow `.claude/skills/create-route/` (same four repos): one
+service call per route, loaders and guards as dependencies, `*Public` response
+models, error responses declared in the OpenAPI, kebab-case plural paths with
+the tenant in the path and no trailing slash. The existing surface mixes
+trailing slashes, `snake_case`/kebab segments and token-implied tenancy
+(`/clinic_pets/`); that's published and consumed by the admin app, static
+sites and CLI, so it stays until a deliberate change moves it. New routes on
+an existing router match their neighbours.
+
 ### The `*Public` convention
 
 A `*Public` model layers a populated, richer version on top of `*InDB` — e.g.
