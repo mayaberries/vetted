@@ -2,9 +2,9 @@ import datetime
 from enum import Enum
 from typing import Optional
 
-from pydantic import model_validator
+from pydantic import field_validator, model_validator
 
-from app.models.core import CoreModel, DateTimeModelMixin, IDModelMixin
+from app.models.core import CoreModel, DateTimeModelMixin, IDModelMixin, fill_missing_timestamp
 from app.models.profiles.owner_profile import OwnerProfileCreate, OwnerProfilePublic
 
 
@@ -31,8 +31,21 @@ class ClinicOwnerProfileInDB(IDModelMixin, DateTimeModelMixin, ClinicOwnerProfil
     first_seen_at: datetime.datetime
 
 
-class ClinicOwnerProfilePublic(ClinicOwnerProfileInDB):
+class ClinicOwnerProfilePublic(CoreModel):
+    # An allow-list, not a subclass of ClinicOwnerProfileInDB: a new column is
+    # only published by adding it here. Field order is the OpenAPI schema's,
+    # which is why the timestamps are declared here rather than by the mixin.
+    notes: Optional[str] = None
+    status: ClinicOwnerProfileStatus = ClinicOwnerProfileStatus.active
+    referred_by: Optional[str] = None
+    created_at: Optional[datetime.datetime] = None
+    updated_at: Optional[datetime.datetime] = None
+    id: str
+    clinic_id: str
     owner_profile_id: Optional["str | OwnerProfilePublic"] = None
+    first_seen_at: datetime.datetime
+
+    default_datetime = field_validator("created_at", "updated_at", mode="before")(fill_missing_timestamp)
 
 
 class ClinicOwnerProfileRegistration(CoreModel):
