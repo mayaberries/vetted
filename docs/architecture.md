@@ -91,6 +91,19 @@ to xolo as is. Today's workflows still live in repositories
 which runs six repositories with no transaction and checks for an overlapping
 booking before inserting with nothing to stop a concurrent one.
 
+New **dependencies** follow `.claude/skills/create-dependency/`: each is one of
+five kinds (actor resolver → 401, role gate → 403, loader → 404, guard → 403,
+builder), raises domain errors, and holds no business rules. Other tenants'
+rows are always 404, and clinic-scoped gates route the superuser decision
+through one predicate. Today's dependencies drift from this in known ways:
+state and uniqueness rules in `check_evaluation_create_permissions` and
+kalens' `check_appointment_create_permissions`, "already claimed" checked in
+both `get_profile_from_claim_token` and `UsersRepository`, 403 instead of 404
+for other owners' pets, other clinics' services and other users' appointments,
+and a superuser bypass that `user_can_manage_clinic` has but
+`user_can_manage_service` doesn't. Seven of them are kalens' contract surface,
+so they change only deliberately.
+
 ### The `*Public` convention
 
 A `*Public` model layers a populated, richer version on top of `*InDB` — e.g.
