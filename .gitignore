@@ -11,4 +11,7 @@ backend/.env
 
 .DS_Store
 
-.claude/
+# Local Claude Code settings stay untracked; project skills are shared with
+# kalens, sinapsis and xolo, so they're committed.
+.claude/*
+!.claude/skills/

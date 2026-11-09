@@ -60,6 +60,18 @@ app/services/            Cross-cutting logic that isn't a repository.
 cli/                     Typer admin CLI. Talks to the API over HTTP only.
 ```
 
+### New repositories follow a stricter shape than the old ones
+
+The project skill `.claude/skills/create-repository/` (shared verbatim with
+kalens, sinapsis and xolo) is the convention for any **new** repository:
+SQL against its own table only, plain-ID scoping instead of `requesting_user`,
+`*InDB` returns, and domain errors (no `HTTPException`) mapped to HTTP by one
+handler. Multi-table workflows, permission rules and `populate_*`-style
+hydration move to `app/services/`. `PetProfilesRepository` already looks like
+this; the rest don't, and that's a known gap, not a model to copy — see the
+skill before adding one, and treat migrating an existing repository as its own
+change (kalens calls several of them by name through `scheduling.py`).
+
 ### The `*Public` convention
 
 A `*Public` model layers a populated, richer version on top of `*InDB` — e.g.
