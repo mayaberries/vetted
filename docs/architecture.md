@@ -81,6 +81,16 @@ trailing slashes, `snake_case`/kebab segments and token-implied tenancy
 sites and CLI, so it stays until a deliberate change moves it. New routes on
 an existing router match their neighbours.
 
+New **services** follow `.claude/skills/create-service/`: a per-request class
+per domain holding its use cases, rules, transactions and `*Public` hydration,
+built by a `get_x_service` dependency. A service uses its own repositories and
+other domains' *services*, never their repositories. `AuthService` predates
+this and is a stateless helper rather than a service in that sense; it moves
+to xolo as is. Today's workflows still live in repositories
+(`UsersRepository`, `ClinicsRepository`) and in kalens' public-booking route,
+which runs six repositories with no transaction and checks for an overlapping
+booking before inserting with nothing to stop a concurrent one.
+
 ### The `*Public` convention
 
 A `*Public` model layers a populated, richer version on top of `*InDB` — e.g.
