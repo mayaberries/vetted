@@ -194,9 +194,15 @@ add the `_test` suffix, so callers hand it one: the Makefile sets
 `KALENS_DATABASE_URL`, the test fixture sets `sqlalchemy.url`.
 
 If a kalens release adds a revision, mirror it as a revision in our chain, then
-re-stamp. kalens' `make compare-schema` (run from a kalens checkout next to this
-one) diffs the two chains' resulting schemas and is how to confirm they still
-agree; `make compare-openapi` does the same for the API surface.
+re-stamp. Confirming the two chains still agree used to be kalens'
+`make compare-schema` (and `make compare-openapi` for the API surface), but
+kalens removed both in `1be99ba decouple-from-pets-appts` because they
+hardcoded this checkout. Host-agnostic replacements are tracked in
+[kalens#9](https://github.com/mayaberries/kalens/issues/9); until they land,
+diff `pg_dump --schema-only -t appointments -t clinic_availability` of a
+database built by our chain against one built by kalens' chain, by hand.
+`.claude/skills/create-migration/` covers writing revisions, mirroring a
+library's, and the cross-chain phase order.
 
 ## Known drift risk: duplicated permission checks
 
