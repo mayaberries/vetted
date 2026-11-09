@@ -166,6 +166,15 @@ of the app needs. Two rules follow:
 Importing `scheduling.py` installs the integration as a side effect, so it must
 not import any route module — the route packages import it.
 
+This is the pattern `.claude/skills/library-contract/` generalises for every
+library a host adopts (one wiring module per library, under
+`app/integrations/` in new hosts; this one keeps its path). When xolo lands,
+it provides four of kalens' fields (`users_repository`,
+`get_current_active_user`, `get_user_by_username_from_path`,
+`get_clinic_from_public_key`): the host configures xolo first and passes its
+module's dependencies into kalens' integration. The libraries never import
+each other.
+
 **Changing scheduling behavior means changing kalens,** tagging a release, and
 bumping the pin here. Its known gaps came along with it (appointments complete
 only via an evaluation; overlap is only checked against confirmed appointments)
