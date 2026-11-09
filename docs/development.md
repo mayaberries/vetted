@@ -55,6 +55,16 @@ kalens tag here in one change.
 kalens installs from a git tag, so `requirements.txt` records the commit it
 resolved to, and `backend/Dockerfile` installs `git` (the `-slim` base image
 has none).
+
+**Bumping the kalens tag won't reinstall it.** Every kalens pre-release so far
+has package version `0.1.0`, so after changing the tag in `requirements.in`,
+pip sees that version is already installed and skips it. `make update-deps`
+then refreezes the old commit. Reinstall it explicitly, then freeze:
+
+```bash
+pip install --force-reinstall --no-deps "$(grep '^kalens' backend/requirements.in)"
+make freeze-deps
+```
 `backend/requirements-cli.txt` is separate on purpose — the API server never
 imports from `cli/`.
 
