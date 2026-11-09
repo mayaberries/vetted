@@ -1,0 +1,67 @@
+---
+import "../styles/global.css";
+import {googleFontsHref} from "../../../shared/design-tokens.mjs";
+import {actions} from "astro:actions";
+import AdminNav from "../components/AdminNav.vue";
+import {tabForPath} from "../lib/nav";
+import type {SessionUser} from "../lib/auth";
+
+interface Props {
+    title: string;
+    user: SessionUser;
+}
+
+const {title, user} = Astro.props;
+
+// Derived from the URL rather than passed in, so a page can never disagree
+// with the nav about which tab it is.
+const activeTab = tabForPath(Astro.url.pathname)?.id ?? null;
+---
+
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>{title} · Pets Admin</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+    <link href={googleFontsHref} rel="stylesheet"/>
+</head>
+
+<body class="bg-base text-ink font-body antialiased min-h-screen">
+{user.isDemo && (
+        <div class="bg-gold text-ink text-xs font-medium px-6 py-2 flex items-center justify-between">
+            <span>Demo mode — seeded data only, nothing here touches the real backend.</span>
+            <form method="POST" action={actions.logout}>
+                <button type="submit" class="underline hover:no-underline">Exit demo</button>
+            </form>
+        </div>
+)}
+<header class="sticky top-0 z-40 bg-base/90 backdrop-blur border-b border-line">
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-2 font-display font-700 text-lg tracking-tight text-ink">
+          <span class="w-7 h-7 rounded-full bg-teal flex items-center justify-center shrink-0">
+            <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 fill-gold"><circle cx="12" cy="12" r="10"/></svg>
+          </span>
+            Pets Admin
+            <span class={`badge ${user.isSuperuser ? "badge-warn" : "badge-ok"}`}>
+            {user.isSuperuser ? "Superadmin" : user.role || "staff"}
+          </span>
+        </div>
+        <div class="flex items-center gap-4 text-sm text-inksoft">
+            <span class="font-mono">{user.email}</span>
+            <form method="POST" action={actions.logout}>
+                <button type="submit" class="text-ink font-medium hover:text-teal transition-colors">Sign out</button>
+            </form>
+        </div>
+    </div>
+    <AdminNav client:load user={user} activeTab={activeTab}/>
+</header>
+
+<main class="max-w-6xl mx-auto px-6 py-8">
+    <slot/>
+</main>
+</body>
+</html>

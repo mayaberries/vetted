@@ -5,6 +5,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 from app.core import config, tasks
 from app.api.routes import router as api_router
+from app.api.errors import register_error_handlers
 
 
 @asynccontextmanager
@@ -26,6 +27,8 @@ def get_application():
         allow_methods=["*"],
         allow_headers=["*"]
     )
+
+    register_error_handlers(app)
 
     app.include_router(api_router, prefix="/api")
 

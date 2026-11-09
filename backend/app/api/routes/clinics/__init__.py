@@ -4,7 +4,7 @@ from app.api.routes.clinics.clinics import router as clinics_router
 from app.api.routes.clinics.clinic_api_keys import router as clinic_api_keys_router
 from app.api.routes.clinics.clinic_owner_profiles import router as clinic_owner_profiles_router
 from app.api.routes.clinics.clinic_pets import router as clinic_pets_router
-from app.api.routes.clinics.clinic_availability import router as clinic_availability_router
+from app.api.scheduling import appts
 
 router = APIRouter()
 
@@ -19,5 +19,6 @@ router.include_router(
 router.include_router(
     clinic_pets_router, prefix="/clinic_pets", tags=["clinic_pets"]
 )
+# Served by kalens -- see app/api/scheduling.py.
 router.include_router(
-    clinic_availability_router, prefix="/clinics/{clinic_id}/availability", tags=["clinic-availability"])
+    appts.availability_router, prefix="/clinics/{clinic_id}/availability", tags=["clinic-availability"])
