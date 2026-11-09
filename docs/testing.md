@@ -38,6 +38,21 @@ tests/_helpers/
 > not a fix — the real answer is per-test transaction rollback, which hasn't been
 > built. **If you see an intermittent appointment-conflict failure, suspect this
 > before suspecting your change.**
+>
+> **Unconfirmed, possibly stale:** `connect_to_db` (`app/db/tasks.py`) has
+> opened the test `Database` with `force_rollback=True` since `3e9d4df`
+> (2026-08-04), and every test enters the app lifespan afresh, which should
+> roll each test back. This note was written after that (2026-08-21). Run the
+> suite twice against one database to settle it; if it holds, this note, the
+> CLAUDE.md trap and the get-or-create / random-window workarounds can go.
+
+New tests follow `.claude/skills/write-tests/` (shared with kalens, sinapsis
+and xolo): one kind of test per layer, factories with unique values instead of
+named singleton fixtures, per-request `auth_headers(user)` rather than
+`create_authorized_client` (which mutates the shared client's headers), and a
+separate `committing_db` fixture for race tests, since under `force_rollback`
+every query shares one serialised connection and `asyncio.gather` can't
+produce real concurrency.
 
 `tests/feed/` is skipped — the Feed feature is dormant, see
 [domain.md](domain.md#feed).
