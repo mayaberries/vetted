@@ -20,6 +20,10 @@ class InputModel(CoreModel):
     model_config = ConfigDict(extra="forbid")
 
 
+def fill_missing_timestamp(value: datetime | None) -> datetime:
+    return value or datetime.now(timezone.utc)
+
+
 class DateTimeModelMixin(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -27,7 +31,7 @@ class DateTimeModelMixin(BaseModel):
     @field_validator("created_at", "updated_at", mode="before")
     @classmethod
     def default_datetime(cls, value: datetime) -> datetime:
-        return value or datetime.now(timezone.utc)
+        return fill_missing_timestamp(value)
 
 
 class IDModelMixin(BaseModel):

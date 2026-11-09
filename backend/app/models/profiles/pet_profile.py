@@ -37,7 +37,16 @@ class PetProfileInDB(IDModelMixin, PetProfileBase, DateTimeModelMixin):
     owner_profile_id: str
 
 
-class PetProfilePublic(PetProfileInDB):
+class PetProfilePublic(DateTimeModelMixin):
+    # An allow-list, not a subclass of PetProfileInDB: a new column is only
+    # published by adding it here. Field order is the OpenAPI schema's.
+    name: str
+    species: Optional[str] = None
+    breed: Optional[str] = None
+    birth_date: Optional[datetime.date] = None
+    notes: Optional[str] = None
+    image: Optional[str] = None
+    id: str
     owner_profile_id: Optional["str | OwnerProfilePublic"] = None
 
 
