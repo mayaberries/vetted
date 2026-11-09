@@ -83,6 +83,9 @@ export default defineConfig({
    * demo mode), so no API/db needs to be running for this. */
   webServer: {
     command: 'npm run build && npm start',
+    // Non-Secure session cookie, or webkit can't sign in over http -- see
+    // astro.config.mjs.
+    env: { ADMIN_INSECURE_SESSION_COOKIE: '1' },
     url: 'http://localhost:4321',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

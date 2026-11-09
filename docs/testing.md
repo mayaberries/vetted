@@ -118,6 +118,15 @@ Three browser projects (chromium, firefox, webkit). Specs run against the
 
 Everything runs in demo mode, so **no API or database needs to be up.**
 
+**The test build uses a non-Secure session cookie.** Astro marks the session
+cookie Secure in production builds, and WebKit, unlike Chromium and Firefox,
+drops Secure cookies on plain-http `localhost`. Every webkit sign-in used to
+bounce back to `/login`. Playwright's `webServer` builds with
+`ADMIN_INSECURE_SESSION_COOKIE=1`, which `astro.config.mjs` turns into
+`secure: false`. The flag is read at build time, so outside CI
+(`reuseExistingServer`) a server you started yourself without it will still
+fail webkit. Never set it for a deployed build.
+
 Data and page-actions are kept in separate files (`fixtures/onboarding.ts` vs
 `helpers/onboarding.ts`) so other specs can reuse either half.
 
