@@ -29,22 +29,27 @@ tests/_fixtures/       shared fixtures
 tests/_helpers/
 ```
 
-> **Known limitation — the test DB is not reset between tests.** Migrations are
-> session-scoped and users aren't recreated if they already exist by email. This
-> causes flaky failures when two tests' appointment fixtures land in overlapping
-> time windows for the same provider.
->
-> Current mitigation: wide randomized fixture time windows. That is a workaround,
-> not a fix — the real answer is per-test transaction rollback, which hasn't been
-> built. **If you see an intermittent appointment-conflict failure, suspect this
-> before suspecting your change.**
->
-> **Unconfirmed, possibly stale:** `connect_to_db` (`app/db/tasks.py`) has
-> opened the test `Database` with `force_rollback=True` since `3e9d4df`
-> (2026-08-04), and every test enters the app lifespan afresh, which should
-> roll each test back. This note was written after that (2026-08-21). Run the
-> suite twice against one database to settle it; if it holds, this note, the
-> CLAUDE.md trap and the get-or-create / random-window workarounds can go.
+**Each test is rolled back.** Under `TESTING`, `connect_to_db`
+(`app/db/tasks.py`) opens the `Database` with `force_rollback=True`, and every
+test enters the app lifespan afresh, so whatever a test writes through the app's
+`Database` (including kalens' routes, which share it) is undone when it ends.
+Confirmed 2026-11-09 by counting every table's rows, from a separate connection,
+before and after each test: none of the suite's tests left a row behind, and a
+control test that committed through its own connection was caught (#227).
+
+Two consequences:
+
+- **Only rows written through the app's `Database` are rolled back.** A test
+  that opens its own connection (psycopg2, a second `Database`) commits for
+  real and leaks into every later test.
+- **"Run the suite twice" proves nothing here.** `migrations/env.py` drops and
+  recreates `<db>_test` at the start of every session and `apply_migrations`
+  downgrades at the end, so each run starts empty whether or not tests leak.
+  To check isolation, compare row counts per test instead.
+
+The get-or-create user fixtures and randomised appointment windows in
+`tests/_fixtures/` predate this and are no longer needed; #227 replaces them
+with factories.
 
 New tests follow `.claude/skills/write-tests/` (shared with kalens, sinapsis
 and xolo): one kind of test per layer, factories with unique values instead of

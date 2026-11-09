@@ -42,9 +42,6 @@ won't block and a second call just says "already running". Use
 **Permission rules live in two layers on purpose** — `app/api/dependencies/` and
 `app/db/repositories/`. Grep both when changing one; they have drifted before.
 
-**The backend test DB isn't reset between tests.** Intermittent
-appointment-conflict failures are usually this, not your change.
-
 **The backend login endpoint takes `username`, not `email`,** in its OAuth2 form —
 the admin app posts the email address under the `username` key on purpose.
 

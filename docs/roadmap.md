@@ -77,8 +77,6 @@ These are blocked on a decision, not on effort.
   timezone.
 - **No idempotency protection** on `POST /public/appointments` — a double-submit
   or retry can create duplicate guest bookings.
-- **Test DB isolation.** No per-test transaction rollback; randomized fixture time
-  windows are a workaround. See [testing.md](testing.md).
 - **Single-superuser only.** `ix_users_single_superuser` enforces exactly one. A
   real multi-operator flow (invite/promote over HTTP, with an audit trail) hasn't
   been designed.
