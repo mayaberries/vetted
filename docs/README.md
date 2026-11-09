@@ -32,12 +32,10 @@ anything beyond that is below.
 - [`notes/notifications-feed.md`](notes/notifications-feed.md) — speculative
   design note on reusing the dormant Feed's shape for notifications.
 
-## If you only read three things
+## If you only read two things
 
 1. **[The nanostores/SSR rule](admin-dashboard.md#nanostores-never-set-from-server-code)** —
    module state is shared across concurrent requests; getting this wrong leaks
    one user's session into another's page.
 2. **[Duplicated permission checks](architecture.md#known-drift-risk-duplicated-permission-checks)** —
    permission rules live in two layers on purpose, and have drifted before.
-3. **[The test DB isn't reset between tests](testing.md#backend-backendtests)** —
-   intermittent appointment-conflict failures are usually this, not your change.
