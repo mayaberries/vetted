@@ -20,4 +20,4 @@ httpx==0.28.1
 # The scheduling engine extracted from this repo. It pins fastapi, pydantic,
 # databases, limits, alembic, SQLAlchemy and email-validator to exactly the
 # versions above -- bump those in kalens first, or pip cannot resolve.
-kalens @ git+https://github.com/mayaberries/kalens.git@v0.1.0-alpha.2
+kalens @ git+https://github.com/mayaberries/kalens.git@v0.1.0-alpha.3

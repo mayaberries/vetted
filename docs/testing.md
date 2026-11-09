@@ -76,8 +76,7 @@ runs against a stand-in host:
   login refusal, per-clinic pet visibility, default hours on clinic creation.
 
 Before adding a test here, ask which of those two it is. If it's neither, it
-belongs in kalens. Tests marked `TODO(kalens#1)` are engine behaviour kept only
-until kalens covers them.
+belongs in kalens.
 
 ## Admin dashboard (`frontend/admin/tests/`)
 
