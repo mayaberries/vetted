@@ -8,10 +8,16 @@ from app.models.auth.token import AccessToken
 from app.models.profiles.owner_profile import OwnerProfilePublic as ProfilePublic
 
 
-def validate_username(username: str) -> str:
+def validate_username(username: str | None) -> str | None:
+    # Raise, never assert: `python -O` strips asserts, which silently turned
+    # this validator off.
+    if username is None:
+        return None
     allowed = string.ascii_letters + string.digits + "-" + "_"
-    assert all(char in allowed for char in username), "Invalid characters in username."
-    assert len(username) >= 3, "Username must be 3 in characters or more."
+    if not all(char in allowed for char in username):
+        raise ValueError("Invalid characters in username.")
+    if len(username) < 3:
+        raise ValueError("Username must be 3 characters or more.")
     return username
 
 
@@ -63,7 +69,9 @@ class UserPasswordUpdate(CoreModel):
 
 
 class UserInDB(IDModelMixin, DateTimeModelMixin, UserBase):
-    password: constr(min_length=7, max_length=100)
+    # The stored bcrypt hash, not user input: length rules belong on the
+    # input models.
+    password: str
     salt: str
 
 

@@ -1,5 +1,5 @@
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from pydantic import BaseModel, ConfigDict, field_validator
 
 
@@ -27,7 +27,7 @@ class DateTimeModelMixin(BaseModel):
     @field_validator("created_at", "updated_at", mode="before")
     @classmethod
     def default_datetime(cls, value: datetime) -> datetime:
-        return value or datetime.now()
+        return value or datetime.now(timezone.utc)
 
 
 class IDModelMixin(BaseModel):
