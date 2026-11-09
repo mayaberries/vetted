@@ -55,7 +55,8 @@ app/db/repositories/     ALL database access. Raw SQL via `databases`. One class
 app/models/              Pydantic v2 models: *Create / *InDB / *Public / *Update.
 app/db/migrations/       Alembic revisions.
 app/api/scheduling.py    The one place this app is wired into kalens (below).
-app/core/                Config, settings.
+app/core/                Config, settings, domain errors (`errors.py`).
+app/api/errors.py        Maps domain errors to HTTP; `error_responses()` for routes' `responses=`.
 app/services/            Cross-cutting logic that isn't a repository.
 cli/                     Typer admin CLI. Talks to the API over HTTP only.
 ```
