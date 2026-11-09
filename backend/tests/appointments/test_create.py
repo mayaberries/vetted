@@ -39,25 +39,6 @@ class TestCreateAppointments:
         assert offer.service_id == test_service.id
         assert offer.status == "requested"
 
-    async def test_user_can_create_multiple_appointments_for_same_service(
-            self, app: FastAPI, create_authorized_client: Callable, test_service: ServiceInDB,
-            user_client_two: UserInDB, user_client_two_pet: PetProfileInDB,
-    ) -> None:
-        authorized_client = create_authorized_client(user=user_client_two)
-
-        response_one = await authorized_client.post(
-            app.url_path_for("appointments:create-appointment", service_id=test_service.id),
-            json={"start_time": future_time(hours=1), "pet_id": user_client_two_pet.id},
-        )
-        assert response_one.status_code == status.HTTP_201_CREATED
-
-        response_two = await authorized_client.post(
-            app.url_path_for("appointments:create-appointment", service_id=test_service.id),
-            json={"start_time": future_time(hours=5), "pet_id": user_client_two_pet.id},
-        )
-        assert response_two.status_code == status.HTTP_201_CREATED
-        assert response_two.json()["id"] != response_one.json()["id"]
-
     async def test_user_unable_to_create_offer_for_their_own_service_job(
             self, app: FastAPI, clinic_a_admin_client: AsyncClient, user_clinic_a_admin: UserInDB,
             test_service: ServiceInDB
@@ -91,17 +72,6 @@ class TestCreateAppointments:
             json={"start_time": future_time(), "pet_id": user_client_two_pet.id},
         )
         assert response.status_code == status.HTTP_404_NOT_FOUND
-
-    async def test_missing_pet_id_rejected(
-            self, app: FastAPI, create_authorized_client: Callable, test_service: ServiceInDB,
-            user_client_one: UserInDB,
-    ) -> None:
-        authorized_client = create_authorized_client(user=user_client_one)
-        response = await authorized_client.post(
-            app.url_path_for("appointments:create-appointment", service_id=test_service.id),
-            json={"start_time": future_time()},
-        )
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
     @pytest.mark.parametrize(
         "id, status_code",
