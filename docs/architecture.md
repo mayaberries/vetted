@@ -204,6 +204,46 @@ database built by our chain against one built by kalens' chain, by hand.
 `.claude/skills/create-migration/` covers writing revisions, mirroring a
 library's, and the cross-chain phase order.
 
+## Settings and startup
+
+Decided 2026-11-08, shared with sinapsis (its `docs/DECISIONS.md`); the how-to
+is `.claude/skills/add-setting/`. **None of it is implemented here yet.** It
+lands as one configuration change, and until then the current behaviour below
+is what runs.
+
+**Today.** `app/core/config.py` reads starlette's `Config(".env")`, relative to
+the **working directory**, into module constants at import. Some of them are
+frozen again into defaults (`AuthService.create_access_token_for_user(secret_key=str(SECRET_KEY), audience=JWT_AUDIENCE)`,
+`models/auth/token.py`'s `aud = JWT_AUDIENCE`). `TESTING` is read straight from
+`os.environ` in `db/tasks.py` and `migrations/env.py`. CORS is hardcoded in
+`api/server.py` as `allow_origins=["*"]` with `allow_credentials=True`, and
+Starlette answers that with the caller's own origin, so any site can make
+credentialed requests. `connect_to_db` catches every exception, logs a
+warning and leaves `app.state._db` unset, so the app starts and then every DB
+request fails with an `AttributeError` 500. There's no health endpoint. If
+`REDIS_URL` is set and Redis goes down, kalens' limiter raises on every
+public-booking request (500).
+
+**Decided:**
+
+- **One `Settings` class** (pydantic-settings), typed, environment then
+  `backend/.env` resolved from the file's location, read where used via
+  `get_settings()`. No module constants, no frozen defaults.
+- **`environment`** (`development | test | production`) replaces `TESTING`.
+  Production requires the database URL, `SECRET_KEY` and CORS origins to be
+  set, rejects the template's `supersecret` and a `*` origin, and fails at
+  startup with one error listing everything wrong. This is also the value
+  `TODO(env-scoping)` in `public_auth.py` asks for.
+- **Secrets are `SecretStr`**; **CORS origins** are a setting.
+- **The app starts with PostgreSQL or Redis down**, on purpose, and:
+  `GET /health/live` is always 200; `GET /health/ready` returns 200 or 503
+  naming each check; `get_database` reconnects once and otherwise raises
+  `ServiceUnavailableError` (503); dropped connections map to the same 503 in
+  one handler; outages are logged once per state change.
+- **Failure modes:** the database and auth fail closed (503); kalens' rate
+  limiter should fail open (log, allow), because a Redis outage shouldn't stop
+  clinics taking bookings. That's a kalens change.
+
 ## Known drift risk: duplicated permission checks
 
 Some permission rules exist in **two** places on purpose:
